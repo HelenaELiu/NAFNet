@@ -11,7 +11,7 @@
 
 ## NAFNet: Nonlinear Activation Free Network for Image Restoration
 
-The official pytorch implementation of the paper **[Simple Baselines for Image Restoration](https://arxiv.org/abs/2204.04676)**
+The official pytorch implementation of the paper **[Simple Baselines for Image Restoration (ECCV2022)](https://arxiv.org/abs/2204.04676)**
 
 #### Liangyu Chen\*, Xiaojie Chu\*, Xiangyu Zhang, Jian Sun
 
@@ -26,6 +26,12 @@ The official pytorch implementation of the paper **[Simple Baselines for Image R
 ![PSNR_vs_MACs](./figures/PSNR_vs_MACs.jpg)
 
 ### News
+**2022.07.03** Related work, [Improving Image Restoration by Revisiting Global Information Aggregation](https://arxiv.org/abs/2112.04491) (TLC, a.k.a TLSC in our paper) is accepted by **ECCV2022** :tada: . Code is available at https://github.com/megvii-research/TLC.
+
+**2022.07.03** Our [paper](https://arxiv.org/abs/2204.04676) is accepted by **ECCV2022** :tada:
+
+**2022.06.19** [NAFSSR](https://arxiv.org/abs/2204.08714) (as a challenge winner) is selected for an ORAL presentation at CVPR 2022, NTIRE workshop  :tada: [Presentation video](https://drive.google.com/file/d/16w33zrb3UI0ZIhvvdTvGB2MP01j0zJve/view), [slides](https://data.vision.ee.ethz.ch/cvl/ntire22/slides/Chu_NAFSSR_slides.pdf) and [poster](https://data.vision.ee.ethz.ch/cvl/ntire22/posters/Chu_NAFSSR_poster.pdf) are available now.
+
 **2022.04.15** NAFNet based Stereo Image Super-Resolution solution ([NAFSSR](https://arxiv.org/abs/2204.08714)) won the **1st place** on the NTIRE 2022 Stereo Image Super-resolution Challenge! Training/Evaluation instructions see [here](https://github.com/megvii-research/NAFNet/blob/main/docs/StereoSR.md). 
 
 ### Installation
@@ -107,6 +113,17 @@ If NAFNet helps your research or work, please consider citing NAFNet.
   author={Chen, Liangyu and Chu, Xiaojie and Zhang, Xiangyu and Sun, Jian},
   journal={arXiv preprint arXiv:2204.04676},
   year={2022}
+}
+```
+If NAFSSR helps your research or work, please consider citing NAFSSR.
+```
+@InProceedings{chu2022nafssr,
+    author    = {Chu, Xiaojie and Chen, Liangyu and Yu, Wenqing},
+    title     = {NAFSSR: Stereo Image Super-Resolution Using NAFNet},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops},
+    month     = {June},
+    year      = {2022},
+    pages     = {1239-1248}
 }
 ```
 
