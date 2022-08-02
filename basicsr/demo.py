@@ -35,8 +35,6 @@ def main():
 
     img = img2tensor(img, bgr2rgb=True, float32=True)
 
-
-
     ## 2. run inference
     opt['dist'] = False
     model = create_model(opt)

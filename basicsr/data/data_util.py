@@ -338,3 +338,35 @@ def duf_downsample(x, kernel_size=13, scale=4):
     if squeeze_flag:
         x = x.squeeze(0)
     return x
+
+def center_crop(img: np.ndarray, width: int, height: int, channel: str):
+    """Center crop an image
+    
+    Specify where the color channel is with "first" or "last" 
+    e.g (H,W,C) --> "last"
+    """
+    if channel == "last":
+        y = img.shape[0] // 2 - height // 2
+        x = img.shape[1] // 2 - width // 2
+        if len(img.shape) == 3:
+            return img[y : y + height, x : x + width, :]
+        return img[y: y+height, x: x+width]
+
+    elif channel == "first":
+        y = img.shape[1] // 2 - height // 2
+        x = img.shape[2] // 2 - width // 2
+
+        return img[:, y:y+height, x:x+width]
+
+
+def functional_crop(img: np.ndarray, crop_params: list, channel: str):
+    """Crop an image at given params
+    """
+    top = crop_params[0]
+    left = crop_params[1]
+    height = crop_params[2]
+    width = crop_params[3]
+    if channel == "last":
+        return img[top: top+height, left: left+width, :]
+    elif channel == "first":
+        return img[:, top: top+height, left: left+width]

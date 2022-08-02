@@ -1,0 +1,70 @@
+# ------------------------------------------------------------------------
+# Copyright (c) 2022 megvii-model. All Rights Reserved.
+# ------------------------------------------------------------------------
+# Modified from BasicSR (https://github.com/xinntao/BasicSR)
+# Copyright 2018-2020 BasicSR Authors
+# ------------------------------------------------------------------------
+# general settings
+name: NAFNet-OCL-plain
+model_type: ImageRestorationModel
+scale: 1
+num_gpu: 1
+manual_seed: 10
+
+datasets:
+
+  test:
+    name: LF2016_OCL-test
+    type: DataLoaderCenterViewsAndShiftToShift
+    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
+    test_list: test_file.json
+
+    img_height: 370
+    img_width: 540
+    random: true
+    crop: true
+    ltm: false 
+    gamma: 3.0
+    size: 1000
+
+    # dataloader
+    use_shuffle: true
+    num_worker_per_gpu: 6
+    batch_size_per_gpu: 7
+    dataset_enlarge_ratio: 1
+    prefetch_mode: ~
+
+
+network_g:
+  in_channels: 15
+  out_channels: 3
+  type: NAFNetPlain
+  width: 32
+  enc_blk_nums: [2, 2, 4, 8]
+  middle_blk_num: 12
+  dec_blk_nums: [2, 2, 2, 2]
+
+# path
+path:
+  pretrain_network_g: experiments/NAFNet-OCL-plain/models/net_g_latest.pth
+  strict_load_g: true
+  resume_state: ~
+
+val:
+  save_img: false
+  use_image: false
+
+  metrics:
+    psnr: # metric name, can be arbitrary
+      type: calculate_psnr
+      crop_border: 0
+      test_y_channel: false
+    ssim:
+      type: calculate_ssim
+      crop_border: 0
+      test_y_channel: false
+
+# dist training settings
+dist_params:
+  backend: nccl
+  port: 29500

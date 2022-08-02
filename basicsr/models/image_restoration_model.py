@@ -272,7 +272,8 @@ class ImageRestorationModel(BaseModel):
             if idx % world_size != rank:
                 continue
 
-            img_name = osp.splitext(osp.basename(val_data['lq_path'][0]))[0]
+            #img_name = osp.splitext(osp.basename(val_data['lq_path'][0]))[0]
+            img_name = str(idx)
 
             self.feed_data(val_data, is_val=True)
             if self.opt['val'].get('grids', False):

@@ -12,22 +12,28 @@ from basicsr.utils.options import parse
 
 class Predictor(BasePredictor):
     def setup(self):
-        opt_path_denoise = "options/test/SIDD/NAFNet-width64.yml"
-        opt_denoise = parse(opt_path_denoise, is_train=False)
-        opt_denoise["dist"] = False
+        
+        opt_path_ocl_plain = "options/test/OCL/NAFNet-plain.yml"
+        opt_ocl_plain = parse(opt_path_ocl_plain, is_train=False)
+        opt_ocl_plain["dist"] = False
 
-        opt_path_deblur = "options/test/GoPro/NAFNet-width64.yml"
-        opt_deblur = parse(opt_path_deblur, is_train=False)
-        opt_deblur["dist"] = False
+        opt_path_ocl_conv = "options/test/OCL/NAFNet-conv.yml"
+        opt_ocl_conv = parse(opt_path_ocl_conv, is_train=False)
+        opt_ocl_conv["dist"] = False
 
-        opt_path_stereo = "options/test/NAFSSR/NAFSSR-L_4x.yml"
-        opt_stereo = parse(opt_path_stereo, is_train=False)
-        opt_stereo["dist"] = False
+        opt_path_ocl_resI = "options/test/OCL/NAFNet-ResI.yml"
+        opt_ocl_resI = parse(opt_path_ocl_resI, is_train=False)
+        opt_ocl_resI["dist"] = False
+
+        opt_path_ocl_resII = "options/test/OCL/NAFNet-ResII.yml"
+        opt_ocl_resII = parse(opt_path_ocl_resII, is_train=False)
+        opt_ocl_resII["dist"] = False
 
         self.models = {
-            "Image Denoising": create_model(opt_denoise),
-            "Image Debluring": create_model(opt_deblur),
-            "Stereo Image Super-Resolution": create_model(opt_stereo),
+            "OCL Plain": create_model(opt_ocl_plain),
+            "OCL Conv": create_model(opt_ocl_conv),
+            "OCL ResI": create_model(opt_ocl_resI),
+            "OCL ResII": create_model(opt_ocl_resII),
         }
 
     def predict(

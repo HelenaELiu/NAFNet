@@ -31,12 +31,12 @@ _dataset_modules = [
     importlib.import_module(f'basicsr.data.{file_name}')
     for file_name in dataset_filenames
 ]
+print(_dataset_modules)
 
-
-def create_dataset(dataset_opt):
+def create_dataset(dataset_opt, test=False):
     """Create dataset.
 
-    Args:
+    ArgsDataLoaderCenterViewsAndShiftToShift:
         dataset_opt (dict): Configuration for dataset. It constains:
             name (str): Dataset name.
             type (str): Dataset type.
@@ -51,7 +51,7 @@ def create_dataset(dataset_opt):
     if dataset_cls is None:
         raise ValueError(f'Dataset {dataset_type} is not found.')
 
-    dataset = dataset_cls(dataset_opt)
+    dataset = dataset_cls(dataset_opt, test=test)
 
     logger = get_root_logger()
     logger.info(

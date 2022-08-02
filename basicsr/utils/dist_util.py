@@ -28,6 +28,7 @@ def init_dist(launcher, backend='nccl', **kwargs):
 def _init_dist_pytorch(backend, **kwargs):
     rank = int(os.environ['RANK'])
     num_gpus = torch.cuda.device_count()
+    print(f"Initializing DDP with {num_gpus} GPUs")
     torch.cuda.set_device(rank % num_gpus)
     dist.init_process_group(backend=backend, **kwargs)
 

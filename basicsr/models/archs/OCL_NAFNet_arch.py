@@ -162,6 +162,137 @@ class NAFNet(nn.Module):
         return x
 
 
+class NAFNetPlain(NAFNet):
+
+    def __init__(self, **kwargs):
+        super(NAFNetPlain, self).__init__(**kwargs)
+
+
+    def forward(self, inp):
+        B, C, H, W = inp.shape
+        inp = self.check_image_size(inp)
+
+        x = self.intro(inp)
+
+        encs = []
+
+        for encoder, down in zip(self.encoders, self.downs):
+            x = encoder(x)
+            encs.append(x)
+            x = down(x)
+
+        x = self.middle_blks(x)
+
+        for decoder, up, enc_skip in zip(self.decoders, self.ups, encs[::-1]):
+            x = up(x)
+            x = x + enc_skip
+            x = decoder(x)
+
+        x = self.ending(x)
+
+        return x[:, :, :H, :W]
+
+
+class NAFNetResidualOCLI(NAFNet):
+
+    def __init__(self, **kwargs):
+        super(NAFNetResidualOCLI, self).__init__(**kwargs)
+
+
+    def forward(self, inp):
+        B, C, H, W = inp.shape
+        inp = self.check_image_size(inp)
+
+        x = self.intro(inp)
+
+        encs = []
+
+        for encoder, down in zip(self.encoders, self.downs):
+            x = encoder(x)
+            encs.append(x)
+            x = down(x)
+
+        x = self.middle_blks(x)
+
+        for decoder, up, enc_skip in zip(self.decoders, self.ups, encs[::-1]):
+            x = up(x)
+            x = x + enc_skip
+            x = decoder(x)
+
+        x = self.ending(x)
+        x = x + inp
+
+        return x[:, :3, :H, :W]
+
+
+class NAFNetResidualOCLII(NAFNet):
+
+    def __init__(self, **kwargs):
+        super(NAFNetResidualOCLII, self).__init__(**kwargs)
+
+
+    def forward(self, inp):
+        B, C, H, W = inp.shape
+        inp = self.check_image_size(inp)
+
+        x = self.intro(inp)
+
+        encs = []
+
+        for encoder, down in zip(self.encoders, self.downs):
+            x = encoder(x)
+            encs.append(x)
+            x = down(x)
+
+        x = self.middle_blks(x)
+
+        for decoder, up, enc_skip in zip(self.decoders, self.ups, encs[::-1]):
+            x = up(x)
+            x = x + enc_skip
+            x = decoder(x)
+
+        x = self.ending(x)
+        x = x + inp[:,:3,:,:]
+
+        return x[:, :, :H, :W]
+
+class NAFNetResidualOCLConv(NAFNet):
+
+    def __init__(self, **kwargs):
+        super(NAFNetResidualOCLConv, self).__init__(**kwargs)
+
+        self.outconv = nn.Conv2d(in_channels=kwargs['in_channels'], out_channels=3, 
+                kernel_size=3, padding=1, stride=1, groups=1, bias=True)
+
+
+    def forward(self, inp):
+        B, C, H, W = inp.shape
+        inp = self.check_image_size(inp)
+
+        x = self.intro(inp)
+
+        encs = []
+        
+        for encoder, down in zip(self.encoders, self.downs):
+            x = encoder(x)
+            encs.append(x)
+            x = down(x)
+
+        x = self.middle_blks(x)
+
+        for decoder, up, enc_skip in zip(self.decoders, self.ups, encs[::-1]):
+            x = up(x)
+            x = x + enc_skip
+            x = decoder(x)
+
+        x = self.ending(x)
+        x = x + inp
+
+        x = self.outconv(x) 
+
+        return x[:, :, :H, :W]
+
+
 class NAFNetLocal(Local_Base, NAFNet):
     def __init__(self, *args, train_size=(1, 3, 256, 256), fast_imp=False, **kwargs):
         Local_Base.__init__(self)

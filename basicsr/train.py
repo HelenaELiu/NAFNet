@@ -126,7 +126,7 @@ def create_train_val_dataloader(opt, logger):
                 f'\n\tTotal epochs: {total_epochs}; iters: {total_iters}.')
 
         elif phase == 'val':
-            val_set = create_dataset(dataset_opt)
+            val_set = create_dataset(dataset_opt, test=True)
             val_loader = create_dataloader(
                 val_set,
                 dataset_opt,
@@ -201,6 +201,15 @@ def main():
         model = create_model(opt)
         start_epoch = 0
         current_iter = 0
+        print(model)
+        """
+        macs, params = get_model_complexity_info(model, (15, 370, 540), verbose=False, print_per_layer_stat=False)
+
+        params = float(params[:-3])
+        macs = float(macs[:-4])
+
+        logger.info(f"MODEL INFORMATION: \n MACS: \n {macs} \n PARAMS: \n {params}")
+        """
 
     # create message logger (formatted outputs)
     msg_logger = MessageLogger(opt, current_iter, tb_logger)
@@ -261,7 +270,7 @@ def main():
                 logger.info('Saving models and training states.')
                 model.save(epoch, current_iter)
 
-            # validation
+            # skip validation
             if opt.get('val') is not None and (current_iter % opt['val']['val_freq'] == 0 or current_iter == 1000):
             # if opt.get('val') is not None and (current_iter % opt['val']['val_freq'] == 0):
                 rgb2bgr = opt['val'].get('rgb2bgr', True)
