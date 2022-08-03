@@ -20,6 +20,8 @@ from typing import Any, Union
 from tqdm import tqdm as _tqdm
 from pytorch_lightning.trainer import Trainer
 from collections import OrderedDict
+import torchmetrics
+from pytorch_lightning.loggers import CSVLogger
 
 def parse_options():
     parser = argparse.ArgumentParser()
@@ -55,6 +57,7 @@ def get_dataloaders(opt):
 
 def prepare_dirs(opt):
     os.makedirs(cfg['train']['default_root_dir'], exist_ok = True)
+    os.makedirs("logs", exist_ok = True)
 
 def normalize_batch(batch):
     # Normalize batch using ImageNet mean and std
@@ -93,7 +96,7 @@ class NAFGAN(pl.LightningModule):
         self.L1_loss = nn.L1Loss()
         self.MSE_loss = nn.MSELoss()
         self.SSIM_loss = SSIM()
-        self.PSNR_loss = PSNRLoss()
+        self.PSNR = torchmetrics.PeakSignalNoiseRatio()
         
         #train settings
         self.train_opt = cfg['train']
@@ -101,11 +104,11 @@ class NAFGAN(pl.LightningModule):
         #epoch values
         self.warmup_epochs = self.train_opt['warmup_epochs']
         self.full_epochs = self.train_opt['full_epochs']
-        
+
     def forward(self, img):
         return self.generator(img)
 
-    def compute_gradient_penalty_patch(self, netD, real_samples, fake_samples):
+    def compute_gradient_penalty(self, netD, real_samples, fake_samples):
         """Calculates the gradient penalty loss for WGAN GP"""
         alpha = torch.Tensor(np.random.random(real_samples.size())).to(self.device)
         interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
@@ -156,15 +159,49 @@ class NAFGAN(pl.LightningModule):
                 g_loss = self.cfg['magic_nums']['l1'] * l1_loss + self.cfg['magic_nums']['ssim'] * ssim_loss \
                     + self.cfg['magic_nums']['vgg'] * vgg_loss + self.cfg['magic_nums']['adv'] * adv_loss
 
-        tqdm_dict = {'g_loss': g_loss}
-        output = OrderedDict({
-            'loss': g_loss,
-            'progress_bar': tqdm_dict,
-            'log': tqdm_dict
-        })
+            tqdm_dict = {'g_loss': g_loss}
+            output = OrderedDict({
+                'loss': g_loss,
+                'progress_bar': tqdm_dict,
+                'log': tqdm_dict,
+                'preds': generated, 
+                'target': gt
+            })
 
+        if optimizer_idx == 1:
+            generated = self(inputs)
+
+            #Patch GAN Loss
+            real_patch_validity = self.patchD(gt)
+            fake_patch_validity = self.patchD(generated)
+            patch_gradient_penalty = self.compute_gradient_penalty(self.patchD, gt.data, generated.data)
+            patch_d_loss = -torch.mean(real_patch_validity) + torch.mean(fake_patch_validity) + lambda_gp*patch_gradient_penalty
+
+            #Full GAN Loss
+            real_full_validity = self.fullD(gt)
+            fake_full_validity = self.fullD(generated)
+            full_gradient_penalty = self.compute_gradient_penalty(self.fullD, gt.data, generated.data)
+            full_d_loss = -torch.mean(real_full_validity) + torch.mean(fake_full_validity) + lambda_gp * full_gradient_penalty
+
+            d_loss = (patch_d_loss + full_d_loss) / 2
+            d_loss = self.cfg['magic_nums']['d_loss'] * d_loss
+
+            output = OrderedDict({
+                'loss': d_loss,
+                'progress_bar': tqdm_dict,
+                'log': tqdm_dict,
+                'preds': generated,
+                'target': gt
+            }) 
         return output
-    
+
+    def training_step_end(self, outputs):
+        self.PSNR(outputs['preds'], outputs['gt'])
+         
+    def training_epoch_end(self, outputs) -> None:
+        self.log('PSNR', self.PSNR.compute())
+        self.PSNR.reset()
+
     def configure_optimizers(self):
         lr = self.train_opt['optim_g']['lr']
         betas = self.train_opt['optim_g']['betas']
@@ -233,7 +270,9 @@ if __name__ == '__main__':
     #Model Training
     model = NAFGAN(cfg)
     bar = TQDM_BAR()
+
+    logger = CSVLogger("logs", name = cfg['name'])
     trainer = Trainer(gpus = -1, default_root_dir= cfg['train']['default_root_dir'], max_epochs = cfg['train']['warmup_epochs'] + cfg['train']['full_epochs'], \
-        callbacks = [bar], accumulate_grad_batches= cfg['train']['grad_batches'], accelerator= 'ddp')
+        callbacks = [bar], accumulate_grad_batches= cfg['train']['grad_batches'], accelerator= 'ddp', logger = logger)
     
     trainer.fit(model = model, train_dataloaders= train_dataloader)
