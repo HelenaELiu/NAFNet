@@ -5,10 +5,10 @@
 # Copyright 2018-2020 BasicSR Authors
 # ------------------------------------------------------------------------
 # general settings
-name: NAFNet-OCL-residual-II-GAN
+name: NAFNet-OCL-plain-GAN
 model_type: ImageRestorationModel
 scale: 1
-num_gpu: 8
+num_gpu: 7
 manual_seed: 10
 
 datasets:
@@ -30,7 +30,6 @@ datasets:
     use_shuffle: true
     num_worker_per_gpu: 6
     batch_size_per_gpu: 7
-
     dataset_enlarge_ratio: 1
     prefetch_mode: ~
 
@@ -48,12 +47,10 @@ datasets:
     gamma: 3.0
     size: 1000
 
-
-
 network_g:
   in_channels: 15
   out_channels: 3
-  type: NAFNetResidualOCLII
+  type: NAFNetPlain
   width: 32
   enc_blk_nums: [2, 2, 4, 8]
   middle_blk_num: 12
@@ -64,7 +61,6 @@ path:
   pretrain_network_g: ~
   strict_load_g: true
   resume_state: ~
-  automatic_resume: false
 
 # training settings
 train:
@@ -73,14 +69,17 @@ train:
     lr: !!float 1e-3
     weight_decay: 0.
     betas: [0.9, 0.9]
+  grad_batches: 1
+
+  lambda_gp: 1
 
   scheduler:
-    type: TrueCosineAnnealingLR
+    type: CosineAnnealingLR
     T_max: 400000
     eta_min: !!float 1e-7
 
-  total_iter: 4000
-  warmup_iter: -1 # no warm up
+  full_epochs: 60
+  warmup_epochs: 60_
 
   # losses
   pixel_opt:
@@ -90,7 +89,7 @@ train:
 
 # validation settings
 val:
-  val_freq: 500
+  val_freq: !!float 5e3
   save_img: false
   use_image: false
 
@@ -117,3 +116,20 @@ logger:
 dist_params:
   backend: nccl
   port: 29500
+
+discriminator:
+  d_name: 'double_gan'
+  d_layers: 3
+  norm_layer: 'instance'
+  dropout: True
+
+magic_nums: 
+
+  d_loss: 1 #d_loss = delta*d_loss
+  g_loss: 1 #adv_loss = gamma*gan_loss
+
+  #loss = alpha*l_1 + beta*l_vgg + zeta*l_ssim + lambda*l_adv + kappa*l_edgediff + mu*l_backblur + nu*l_foreedge
+  l1: 0.5 #L1
+  vgg: 0.1 #VGG
+  ssim: 0.05 #SSIM
+  adv: 1 #Adversarial
