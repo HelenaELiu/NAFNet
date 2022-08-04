@@ -11,6 +11,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from os import path as osp
 from tqdm import tqdm
+import numpy as np
 
 from basicsr.models.archs import define_network
 from basicsr.models.base_model import BaseModel
@@ -285,6 +286,7 @@ class ImageRestorationModel(BaseModel):
                 self.grids_inverse()
 
             visuals = self.get_current_visuals()
+            in_img = tensor2img([visuals['lq']])[:,:,:3][:,:,::-1]
             sr_img = tensor2img([visuals['result']], rgb2bgr=rgb2bgr)
             if 'gt' in visuals:
                 gt_img = tensor2img([visuals['gt']], rgb2bgr=rgb2bgr)
@@ -322,13 +324,19 @@ class ImageRestorationModel(BaseModel):
                         save_gt_img_path = osp.join(
                             self.opt['path']['visualization'], dataset_name,
                             f'{img_name}_gt.png')
-
+                        save_in_img_path = osp.join(
+                            self.opt['path']['visualization'], dataset_name,
+                            f'{img_name}_in.png')
+                        
+                    imwrite(in_img, save_in_img_path)
                     imwrite(sr_img, save_img_path)
                     imwrite(gt_img, save_gt_img_path)
 
             if with_metrics:
                 # calculate metrics
                 opt_metric = deepcopy(self.opt['val']['metrics'])
+                val_res = (visuals['result'] * 255).to(torch.uint8)
+                val_gt = (visuals['gt'] * 255).to(torch.uint8)
                 if use_image:
                     for name, opt_ in opt_metric.items():
                         metric_type = opt_.pop('type')
@@ -338,7 +346,7 @@ class ImageRestorationModel(BaseModel):
                     for name, opt_ in opt_metric.items():
                         metric_type = opt_.pop('type')
                         self.metric_results[name] += getattr(
-                            metric_module, metric_type)(visuals['result'], visuals['gt'], **opt_)
+                            metric_module, metric_type)(val_res, val_gt, **opt_)
 
             cnt += 1
             if rank == 0:

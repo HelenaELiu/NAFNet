@@ -31,7 +31,6 @@ _dataset_modules = [
     importlib.import_module(f'basicsr.data.{file_name}')
     for file_name in dataset_filenames
 ]
-print(_dataset_modules)
 
 def create_dataset(dataset_opt, test=False):
     """Create dataset.

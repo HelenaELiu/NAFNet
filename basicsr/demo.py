@@ -23,7 +23,6 @@ def main():
     img_path = opt['img_path'].get('input_img')
     output_path = opt['img_path'].get('output_img')
 
-
     ## 1. read image
     file_client = FileClient('disk')
 

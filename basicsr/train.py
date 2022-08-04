@@ -150,20 +150,20 @@ def main():
     torch.backends.cudnn.benchmark = True
     # torch.backends.cudnn.deterministic = True
 
-    # automatic resume ..
-    state_folder_path = 'experiments/{}/training_states/'.format(opt['name'])
-    import os
-    try:
-        states = os.listdir(state_folder_path)
-    except:
-        states = []
+    if opt['path'].get('automatic_resume'):
+        state_folder_path = 'experiments/{}/training_states/'.format(opt['name'])
+        import os
+        try:
+            states = os.listdir(state_folder_path)
+        except:
+            states = []
 
-    resume_state = None
-    if len(states) > 0:
-        print('!!!!!! resume state .. ', states, state_folder_path)
-        max_state_file = '{}.state'.format(max([int(x[0:-6]) for x in states]))
-        resume_state = os.path.join(state_folder_path, max_state_file)
-        opt['path']['resume_state'] = resume_state
+        resume_state = None
+        if len(states) > 0:
+            print('!!!!!! resume state .. ', states, state_folder_path)
+            max_state_file = '{}.state'.format(max([int(x[0:-6]) for x in states]))
+            resume_state = os.path.join(state_folder_path, max_state_file)
+            opt['path']['resume_state'] = resume_state
 
     # load resume states if necessary
     if opt['path'].get('resume_state'):

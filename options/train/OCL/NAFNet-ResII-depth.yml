@@ -8,13 +8,12 @@
 name: NAFNet-OCL-residual-II
 model_type: ImageRestorationModel
 scale: 1
-num_gpu: 1
-manual_sed: 10
+num_gpu: 8
+manual_seed: 10
 
 datasets:
-  
-  test:
-    name: LF2016_OCL-test
+  train:
+    name: LF2016_OCL
     type: DataLoaderCenterViewsAndShiftToShift
     dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
     test_list: test_files.json
@@ -31,12 +30,28 @@ datasets:
     use_shuffle: true
     num_worker_per_gpu: 6
     batch_size_per_gpu: 7
+
     dataset_enlarge_ratio: 1
     prefetch_mode: ~
 
+  val:
+    name: LF2016_OCL
+    type: DataLoaderCenterViewsAndShiftToShift
+    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
+    test_list: test_files.json
+
+    img_height: 370
+    img_width: 540
+    random: true
+    crop: true
+    ltm: false 
+    gamma: 3.0
+    size: 1000
+
+
 
 network_g:
-  in_channels: 15
+  in_channels: 18
   out_channels: 3
   type: NAFNetResidualOCLII
   width: 32
@@ -46,13 +61,37 @@ network_g:
 
 # path
 path:
-  pretrain_network_g: experiments/NAFNet-OCL-residual-II/models/net_g_latest.pth
+  pretrain_network_g: ~
   strict_load_g: true
   resume_state: ~
+  automatic_resume: false
+
+# training settings
+train:
+  optim_g:
+    type: AdamW
+    lr: !!float 1e-3
+    weight_decay: 0.
+    betas: [0.9, 0.9]
+
+  scheduler:
+    type: TrueCosineAnnealingLR
+    T_max: 400000
+    eta_min: !!float 1e-7
+
+  total_iter: 4000
+  warmup_iter: -1 # no warm up
+
+  # losses
+  pixel_opt:
+    type: PSNRLoss
+    loss_weight: 1
+    reduction: mean
 
 # validation settings
 val:
-  save_img: true
+  val_freq: 500
+  save_img: false
   use_image: false
 
   metrics:
@@ -64,6 +103,15 @@ val:
       type: calculate_ssim
       crop_border: 0
       test_y_channel: false
+
+# logging settings
+logger:
+  print_freq: 200
+  save_checkpoint_freq: !!float 5e3
+  use_tb_logger: true
+  wandb:
+    project: ~
+    resume_id: ~
 
 # dist training settings
 dist_params:

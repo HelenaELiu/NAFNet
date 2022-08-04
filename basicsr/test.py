@@ -37,7 +37,7 @@ def main():
     for phase, dataset_opt in sorted(opt['datasets'].items()):
         if 'test' in phase:
             dataset_opt['phase'] = 'test'
-        test_set = create_dataset(dataset_opt)
+        test_set = create_dataset(dataset_opt, test=True)
         test_loader = create_dataloader(
             test_set,
             dataset_opt,
