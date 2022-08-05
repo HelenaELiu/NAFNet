@@ -220,9 +220,7 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
             img = np.load(img_path)
         elif img_path.endswith(".png"):
             img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
-            if len(img.shape) == 2:
-                img = np.expand_dims(img, axis=-1)
-
+        
         if gray:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         if norm: 
@@ -238,7 +236,11 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
             if crop:
                 img = center_crop(img, img_size[1], img_size[0], "last")
             else:
-                img = cv2.resize(img, (img_size[0], img_size[1]), interpolation=cv2.INTER_CUBIC)
+                img = cv2.resize(img, (img_size[1], img_size[0]), interpolation=cv2.INTER_CUBIC)
+        
+        if len(img.shape) == 2:
+                img = np.expand_dims(img, axis=-1)
+
         # numpy (H,W,C) --> torch (1, C, H, W)
         torch_img = torch.from_numpy(img).float()
         torch_img = torch_img.permute(2, 0, 1) 
