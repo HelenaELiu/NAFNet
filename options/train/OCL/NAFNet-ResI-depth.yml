@@ -51,8 +51,8 @@ datasets:
     size: 1000 
 
 network_g:
-  in_channels: 18
-  out_channels: 18
+  in_channels: 16
+  out_channels: 16
   type: NAFNetResidualOCLI
   width: 32
   enc_blk_nums: [2, 2, 4, 8]

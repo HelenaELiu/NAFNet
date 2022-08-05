@@ -51,7 +51,7 @@ datasets:
 
 
 network_g:
-  in_channels: 18
+  in_channels: 16
   out_channels: 3
   type: NAFNetResidualOCLII
   width: 32
