@@ -37,7 +37,7 @@ datasets:
 
   val:
     name: LF2016_OCL
-    type: DataLoaderCenterViewsAndShiftToShift
+    type: DataLoaderCenterViewsAndShiftAndDepthToShift
     dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
     #dataroot_path: /Users/alexisbaudron/Desktop/data/2x2_OCL_Bokeh/stanford_lytro
     test_list: test_files.json
