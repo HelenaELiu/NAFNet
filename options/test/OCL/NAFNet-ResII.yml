@@ -4,6 +4,7 @@
 # Modified from BasicSR (https://github.com/xinntao/BasicSR)
 # Copyright 2018-2020 BasicSR Authors
 # ------------------------------------------------------------------------
+
 # general settings
 name: NAFNet-OCL-residual-II
 model_type: ImageRestorationModel
@@ -12,7 +13,6 @@ num_gpu: 1
 manual_sed: 10
 
 datasets:
-  
   test:
     name: LF2016_OCL-test
     type: DataLoaderCenterViewsAndShiftToShift
@@ -35,6 +35,7 @@ datasets:
     prefetch_mode: ~
 
 
+
 network_g:
   in_channels: 15
   out_channels: 3
@@ -44,11 +45,15 @@ network_g:
   middle_blk_num: 12
   dec_blk_nums: [2, 2, 2, 2]
 
+
+
 # path
 path:
   pretrain_network_g: experiments/NAFNet-OCL-residual-II/models/net_g_latest.pth
   strict_load_g: true
   resume_state: ~
+
+
 
 # validation settings
 val:
@@ -64,6 +69,8 @@ val:
       type: calculate_ssim
       crop_border: 0
       test_y_channel: false
+
+
 
 # dist training settings
 dist_params:

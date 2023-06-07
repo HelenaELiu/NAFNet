@@ -4,8 +4,9 @@
 # Modified from BasicSR (https://github.com/xinntao/BasicSR)
 # Copyright 2018-2020 BasicSR Authors
 # ------------------------------------------------------------------------
+
 # general settings
-name: NAFNet-OCL-residual-II-GAN
+name: NAFNet-OCL-residual-II
 model_type: ImageRestorationModel
 scale: 1
 num_gpu: 8
@@ -59,12 +60,16 @@ network_g:
   middle_blk_num: 12
   dec_blk_nums: [2, 2, 2, 2]
 
+
+
 # path
 path:
   pretrain_network_g: ~
   strict_load_g: true
   resume_state: ~
   automatic_resume: false
+
+
 
 # training settings
 train:
@@ -79,7 +84,7 @@ train:
     T_max: 400000
     eta_min: !!float 1e-7
 
-  total_iter: 4000
+  total_iter: 300 # 50 epochs
   warmup_iter: -1 # no warm up
 
   # losses
@@ -88,9 +93,11 @@ train:
     loss_weight: 1
     reduction: mean
 
+
+
 # validation settings
 val:
-  val_freq: 500
+  val_freq: 60 # 10 epochs
   save_img: false
   use_image: false
 
@@ -104,14 +111,18 @@ val:
       crop_border: 0
       test_y_channel: false
 
+
+
 # logging settings
 logger:
-  print_freq: 200
+  print_freq: 30 # 5 epochs
   save_checkpoint_freq: !!float 5e3
   use_tb_logger: true
   wandb:
     project: ~
     resume_id: ~
+
+
 
 # dist training settings
 dist_params:

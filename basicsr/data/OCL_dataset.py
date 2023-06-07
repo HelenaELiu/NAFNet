@@ -54,6 +54,7 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
                 continue
             category_stack_path = f"{path}/{category}/focus_stack"
             category_block_path = f"{path}/{category}/lf_blocks"
+
             for scene in sorted(os.listdir(category_stack_path)):
                 scene_num += 1
                 scene_stack_path = f"{category_stack_path}/{scene}"
@@ -62,18 +63,22 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
                     continue
                 if not test and scene_stack_path in test_files:
                     continue
+                
                 ocl_scene_path = f"{scene_stack_path}/{center_view}"
                 ocl_views_scene_path = [f"{scene_block_path}/{v}" for v in ocl_views]
                 gt_scene_path = f"{scene_stack_path}/{full_view}"
+
                 if not os.path.exists(ocl_scene_path) or \
                     not os.path.exists(gt_scene_path):
-                    print(f"{ocl_scene_path} or {gt_scene_path} does not exist")
+                    #print(f"{ocl_scene_path} or {gt_scene_path} does not exist")
                     continue
                 self.paths.append(
                     (ocl_scene_path, ocl_views_scene_path, gt_scene_path)
                 )
-        print(f"VISITED SCENES: {scene_num}") 
-        print(f"NUMBER OF FILES: {len(self.paths)}") 
+
+        #print(f"VISITED SCENES: {scene_num}") 
+        #print(f"NUMBER OF FILES: {len(self.paths)}") 
+        
         if opt["random"]:
             random.shuffle(self.paths)
         
@@ -81,7 +86,6 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
             self.paths = self.paths[:opt["size"]]
 
     def __len__(self):
-
         return len(self.paths)
 
     @staticmethod
@@ -96,17 +100,17 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
         Opens and formats the training image, used for both input and gt pairs
         """
         
-        #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
-        #img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
-        #img = np.float32(img)[:,:,::-1] / 65535
+        #RGB [0, 1] float32
         img = np.load(img_path)
 
         if ltm:
             mu = 1000
             img = np.log(1 + mu * img) / np.log(1 + mu)
+        
         if gamma:
             img = img ** (1 / gamma)
             img = np.clip(img, 0, 1) 
+        
         # Only accept downsampling or cropping
         if img_size and (img_size[0] < img.shape[0] or\
             img_size[1] < img.shape[1]):
@@ -116,6 +120,7 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
                 #INTER_AREA because we are downsizing
                 #img = cv2.resize(img, (img_size[0], img_size[1]), interpolation=cv2.INTER_AREA)
                 pass
+        
         # numpy (H,W,C) --> torch (1, C, H, W)
         torch_img = torch.from_numpy(img).float()
         torch_img = torch_img.permute(2, 0, 1) 
@@ -123,9 +128,9 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
         return torch_img
 
     def __getitem__(self, idx: int):
-
         ocl_shift, ocl_views, gt = self.paths[idx]
         img_size = (self.opt["img_height"], self.opt["img_width"])
+        
         ocl_shift_image = self.preprocess_images(
             ocl_shift, img_size,  
             self.opt["crop"], self.opt["ltm"],
@@ -146,6 +151,11 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
             ocl_stack = torch.cat((ocl_stack, ocl_view), dim=0)
 
         return {'lq': ocl_stack, 'gt': gt_image} 
+
+
+
+
+
 
 
 class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
@@ -187,6 +197,7 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
                 self.paths.append(
                     (ocl_scene_path, ocl_views_scene_path, scene_depth_path, gt_scene_path)
                 )
+        
         print(f"VISITED SCENES: {scene_num}") 
         print(f"NUMBER OF FILES: {len(self.paths)}") 
         if opt["random"]:

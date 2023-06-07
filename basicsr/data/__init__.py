@@ -26,6 +26,7 @@ dataset_filenames = [
     osp.splitext(osp.basename(v))[0] for v in scandir(data_folder)
     if v.endswith('_dataset.py')
 ]
+
 # import all the dataset modules
 _dataset_modules = [
     importlib.import_module(f'basicsr.data.{file_name}')
@@ -40,6 +41,7 @@ def create_dataset(dataset_opt, test=False):
             name (str): Dataset name.
             type (str): Dataset type.
     """
+
     dataset_type = dataset_opt['type']
 
     # dynamic instantiation
@@ -47,6 +49,7 @@ def create_dataset(dataset_opt, test=False):
         dataset_cls = getattr(module, dataset_type, None)
         if dataset_cls is not None:
             break
+    
     if dataset_cls is None:
         raise ValueError(f'Dataset {dataset_type} is not found.')
 
@@ -56,6 +59,7 @@ def create_dataset(dataset_opt, test=False):
     logger.info(
         f'Dataset {dataset.__class__.__name__} - {dataset_opt["name"]} '
         'is created.')
+    
     return dataset
 
 
@@ -80,8 +84,10 @@ def create_dataloader(dataset,
         sampler (torch.utils.data.sampler): Data sampler. Default: None.
         seed (int | None): Seed. Default: None
     """
+
     phase = dataset_opt['phase']
     rank, _ = get_dist_info()
+    
     if phase == 'train':
         if dist:  # distributed training
             batch_size = dataset_opt['batch_size_per_gpu']
@@ -99,21 +105,23 @@ def create_dataloader(dataset,
             drop_last=True,
             persistent_workers=True
         )
+        
         if sampler is None:
             dataloader_args['shuffle'] = True
+        
         dataloader_args['worker_init_fn'] = partial(
             worker_init_fn, num_workers=num_workers, rank=rank,
             seed=seed) if seed is not None else None
+        
     elif phase in ['val', 'test']:  # validation
-        dataloader_args = dict(
-            dataset=dataset, batch_size=1, shuffle=False, num_workers=0)
+        dataloader_args = dict(dataset=dataset, batch_size=1, shuffle=False, num_workers=0)
     else:
         raise ValueError(f'Wrong dataset phase: {phase}. '
                          "Supported ones are 'train', 'val' and 'test'.")
 
     dataloader_args['pin_memory'] = dataset_opt.get('pin_memory', False)
-
     prefetch_mode = dataset_opt.get('prefetch_mode')
+    
     if prefetch_mode == 'cpu':  # CPUPrefetcher
         num_prefetch_queue = dataset_opt.get('num_prefetch_queue', 1)
         logger = get_root_logger()

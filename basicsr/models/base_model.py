@@ -4,6 +4,7 @@
 # Modified from BasicSR (https://github.com/xinntao/BasicSR)
 # Copyright 2018-2020 BasicSR Authors
 # ------------------------------------------------------------------------
+
 import logging
 import os
 import torch
@@ -13,6 +14,7 @@ from torch.nn.parallel import DataParallel, DistributedDataParallel
 
 from basicsr.models import lr_scheduler as lr_scheduler
 from basicsr.utils.dist_util import master_only
+
 
 logger = logging.getLogger('basicsr')
 
@@ -67,7 +69,6 @@ class BaseModel():
         Args:
             net (nn.Module)
         """
-
         net = net.to(self.device)
         if self.opt['dist']:
             find_unused_parameters = self.opt.get('find_unused_parameters',
@@ -78,24 +79,25 @@ class BaseModel():
                 find_unused_parameters=find_unused_parameters)
         elif self.opt['num_gpu'] > 1:
             net = DataParallel(net)
+        
         return net
 
     def setup_schedulers(self):
         """Set up schedulers."""
         train_opt = self.opt['train']
         scheduler_type = train_opt['scheduler'].pop('type')
+
         if scheduler_type in ['MultiStepLR', 'MultiStepRestartLR']:
             for optimizer in self.optimizers:
                 self.schedulers.append(
-                    lr_scheduler.MultiStepRestartLR(optimizer,
-                                                    **train_opt['scheduler']))
+                    lr_scheduler.MultiStepRestartLR(optimizer, **train_opt['scheduler']))
         elif scheduler_type == 'CosineAnnealingRestartLR':
             for optimizer in self.optimizers:
                 self.schedulers.append(
                     lr_scheduler.CosineAnnealingRestartLR(
                         optimizer, **train_opt['scheduler']))
         elif scheduler_type == 'TrueCosineAnnealingLR':
-            print('..', 'cosineannealingLR')
+            #print('..', 'cosineannealingLR')
             for optimizer in self.optimizers:
                 self.schedulers.append(
                     torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, **train_opt['scheduler']))
@@ -119,6 +121,7 @@ class BaseModel():
         """
         if isinstance(net, (DataParallel, DistributedDataParallel)):
             net = net.module
+        
         return net
 
     @master_only
@@ -156,9 +159,11 @@ class BaseModel():
         """Get the initial lr, which is set by the scheduler.
         """
         init_lr_groups_l = []
+        
         for optimizer in self.optimizers:
             init_lr_groups_l.append(
                 [v['initial_lr'] for v in optimizer.param_groups])
+        
         return init_lr_groups_l
 
     def update_learning_rate(self, current_iter, warmup_iter=-1):
@@ -172,6 +177,7 @@ class BaseModel():
         if current_iter > 1:
             for scheduler in self.schedulers:
                 scheduler.step()
+        
         # set up warm-up learning rate
         if current_iter < warmup_iter:
             # get initial lr for each group
@@ -179,9 +185,11 @@ class BaseModel():
             # modify warming-up learning rates
             # currently only support linearly warm up
             warm_up_lr_l = []
+            
             for init_lr_g in init_lr_g_l:
                 warm_up_lr_l.append(
                     [v / warmup_iter * current_iter for v in init_lr_g])
+            
             # set learning rate
             self._set_lr(warm_up_lr_l)
 
@@ -204,6 +212,7 @@ class BaseModel():
         """
         if current_iter == -1:
             current_iter = 'latest'
+        
         save_filename = f'{net_label}_{current_iter}.pth'
         save_path = os.path.join(self.opt['path']['models'], save_filename)
 
@@ -245,6 +254,7 @@ class BaseModel():
             logger.warning('Current net - loaded net:')
             for v in sorted(list(crt_net_keys - load_net_keys)):
                 logger.warning(f'  {v}')
+            
             logger.warning('Loaded net - current net:')
             for v in sorted(list(load_net_keys - crt_net_keys)):
                 logger.warning(f'  {v}')
@@ -271,18 +281,19 @@ class BaseModel():
                 Default: 'params'.
         """
         net = self.get_bare_model(net)
-        logger.info(
-            f'Loading {net.__class__.__name__} model from {load_path}.')
-        load_net = torch.load(
-            load_path, map_location=lambda storage, loc: storage)
+        logger.info(f'Loading {net.__class__.__name__} model from {load_path}.')
+        load_net = torch.load(load_path, map_location=lambda storage, loc: storage)
+        
         if param_key is not None:
             load_net = load_net[param_key]
         print(' load net keys', load_net.keys)
+        
         # remove unnecessary 'module.'
         for k, v in deepcopy(load_net).items():
             if k.startswith('module.'):
                 load_net[k[7:]] = v
                 load_net.pop(k)
+        
         self._print_different_keys_loading(net, load_net, strict)
         net.load_state_dict(load_net, strict=strict)
 
@@ -304,8 +315,10 @@ class BaseModel():
             }
             for o in self.optimizers:
                 state['optimizers'].append(o.state_dict())
+            
             for s in self.schedulers:
                 state['schedulers'].append(s.state_dict())
+            
             save_filename = f'{current_iter}.state'
             save_path = os.path.join(self.opt['path']['training_states'],
                                      save_filename)
@@ -340,13 +353,17 @@ class BaseModel():
             if self.opt['dist']:
                 keys = []
                 losses = []
+                
                 for name, value in loss_dict.items():
                     keys.append(name)
                     losses.append(value)
+                
                 losses = torch.stack(losses, 0)
                 torch.distributed.reduce(losses, dst=0)
+                
                 if self.opt['rank'] == 0:
                     losses /= self.opt['world_size']
+                
                 loss_dict = {key: loss for key, loss in zip(keys, losses)}
 
             log_dict = OrderedDict()

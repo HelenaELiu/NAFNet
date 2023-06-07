@@ -4,6 +4,7 @@
 # Modified from BasicSR (https://github.com/xinntao/BasicSR)
 # Copyright 2018-2020 BasicSR Authors
 # ------------------------------------------------------------------------
+
 import logging
 import torch
 from os import path as osp
@@ -34,9 +35,11 @@ def main():
 
     # create test dataset and dataloader
     test_loaders = []
+
     for phase, dataset_opt in sorted(opt['datasets'].items()):
         if 'test' in phase:
             dataset_opt['phase'] = 'test'
+        
         test_set = create_dataset(dataset_opt, test=True)
         test_loader = create_dataloader(
             test_set,
@@ -45,8 +48,10 @@ def main():
             dist=opt['dist'],
             sampler=None,
             seed=opt['manual_seed'])
+        
         logger.info(
             f"Number of test images in {dataset_opt['name']}: {len(test_set)}")
+        
         test_loaders.append(test_loader)
 
     # create model
@@ -55,9 +60,10 @@ def main():
     for test_loader in test_loaders:
         test_set_name = test_loader.dataset.opt['name']
         logger.info(f'Testing {test_set_name}...')
+        
         rgb2bgr = opt['val'].get('rgb2bgr', True)
-        # wheather use uint8 image to compute metrics
-        use_image = opt['val'].get('use_image', True)
+        use_image = opt['val'].get('use_image', True) # whether use uint8 image to compute metrics
+        
         model.validation(
             test_loader,
             current_iter=opt['name'],

@@ -21,14 +21,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from basicsr.models.archs.arch_util import LayerNorm2d
 from basicsr.models.archs.local_arch import Local_Base
+from basicsr.models.archs.NAFNet_arch import NAFNet
 
-from NAFNet_arch import NAFNet
 
 class NAFNetPlain(NAFNet):
-
     def __init__(self, **kwargs):
         super(NAFNetPlain, self).__init__(**kwargs)
-
 
     def forward(self, inp):
         B, C, H, W = inp.shape
@@ -56,10 +54,8 @@ class NAFNetPlain(NAFNet):
 
 
 class NAFNetResidualOCLI(NAFNet):
-
     def __init__(self, **kwargs):
         super(NAFNetResidualOCLI, self).__init__(**kwargs)
-
 
     def forward(self, inp):
         B, C, H, W = inp.shape
@@ -88,10 +84,8 @@ class NAFNetResidualOCLI(NAFNet):
 
 
 class NAFNetResidualOCLII(NAFNet):
-
     def __init__(self, **kwargs):
         super(NAFNetResidualOCLII, self).__init__(**kwargs)
-
 
     def forward(self, inp):
         B, C, H, W = inp.shape
@@ -118,14 +112,13 @@ class NAFNetResidualOCLII(NAFNet):
 
         return x[:, :, :H, :W]
 
-class NAFNetResidualOCLConv(NAFNet):
 
+class NAFNetResidualOCLConv(NAFNet):
     def __init__(self, **kwargs):
         super(NAFNetResidualOCLConv, self).__init__(**kwargs)
 
         self.outconv = nn.Conv2d(in_channels=kwargs['in_channels'], out_channels=3, 
                 kernel_size=3, padding=1, stride=1, groups=1, bias=True)
-
 
     def forward(self, inp):
         B, C, H, W = inp.shape
@@ -170,6 +163,7 @@ class NAFNetLocal(Local_Base, NAFNet):
 
 if __name__ == '__main__':
     import resource
+
     def using(point=""):
         # print(f'using .. {point}')
         usage = resource.getrusage(resource.RUSAGE_SELF)
@@ -184,7 +178,6 @@ if __name__ == '__main__':
 
     img_channel = 3
     width = 32
-    
     enc_blks = [2, 2, 2, 20]
     middle_blk_num = 2
     dec_blks = [2, 2, 2, 2]
@@ -200,31 +193,21 @@ if __name__ == '__main__':
     # for n, p in net.named_parameters()
     #     print(n, p.shape)
 
-
     inp = torch.randn((4, 3, 256, 256))
-
     out = net(inp)
     final_mem = using('end .. ')
-    # out.sum().backward()
 
     # out.sum().backward()
-
+    # out.sum().backward()
     # using('backward .. ')
-
     # exit(0)
-
-    inp_shape = (3, 512, 512)
 
     from ptflops import get_model_complexity_info
 
+    inp_shape = (3, 512, 512)
     macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
-
     params = float(params[:-3])
     macs = float(macs[:-4])
 
     print(macs, params)
-
     print('total .. ', params * 8 + final_mem)
-
-
-
