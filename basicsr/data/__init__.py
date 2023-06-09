@@ -43,6 +43,7 @@ def create_dataset(dataset_opt, test=False):
     """
 
     dataset_type = dataset_opt['type']
+    dataset_name = dataset_opt['name']
 
     # dynamic instantiation
     for module in _dataset_modules:
@@ -57,9 +58,9 @@ def create_dataset(dataset_opt, test=False):
 
     logger = get_root_logger()
     logger.info(
-        f'Dataset {dataset.__class__.__name__} - {dataset_opt["name"]} '
+        f'Dataset {dataset.__class__.__name__} - {dataset_name} '
         'is created.')
-    
+
     return dataset
 
 

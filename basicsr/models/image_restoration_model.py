@@ -260,6 +260,7 @@ class ImageRestorationModel(BaseModel):
     def dist_validation(self, dataloader, current_iter, tb_logger, save_img, rgb2bgr, use_image):
         dataset_name = dataloader.dataset.opt['name']
         with_metrics = self.opt['val'].get('metrics') is not None
+
         if with_metrics:
             self.metric_results = {
                 metric: 0
@@ -312,7 +313,6 @@ class ImageRestorationModel(BaseModel):
                     imwrite(R_img, osp.join(visual_dir, f'{img_name}_R.png'))
                 else:
                     if self.opt['is_train']:
-
                         save_img_path = osp.join(self.opt['path']['visualization'],
                                                  img_name,
                                                  f'{img_name}_{current_iter}.png')
@@ -352,10 +352,12 @@ class ImageRestorationModel(BaseModel):
                             metric_module, metric_type)(val_res, val_gt, **opt_)
 
             cnt += 1
+            
             if rank == 0:
                 for _ in range(world_size):
                     pbar.update(1)
                     pbar.set_description(f'Test {img_name}')
+        
         if rank == 0:
             pbar.close()
 
@@ -370,14 +372,18 @@ class ImageRestorationModel(BaseModel):
         
         keys = []
         metrics = []
+        
         for name, value in self.collected_metrics.items():
             keys.append(name)
             metrics.append(value)
+        
         metrics = torch.stack(metrics, 0)
         torch.distributed.reduce(metrics, dst=0)
+        
         if self.opt['rank'] == 0:
             metrics_dict = {}
             cnt = 0
+            
             for key, metric in zip(keys, metrics):
                 if key == 'cnt':
                     cnt = float(metric)
@@ -389,6 +395,7 @@ class ImageRestorationModel(BaseModel):
 
             self._log_validation_metric_values(current_iter, dataloader.dataset.opt['name'],
                                                tb_logger, metrics_dict)
+        
         return 0.
 
     def nondist_validation(self, *args, **kwargs):

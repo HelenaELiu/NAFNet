@@ -45,7 +45,7 @@ datasets:
     img_width: 540
     random: true
     crop: true
-    ltm: false 
+    ltm: false
     gamma: 3.0
     size: 1000
 
@@ -84,12 +84,12 @@ train:
     T_max: 400000
     eta_min: !!float 1e-7
 
-  total_iter: 300 # 50 epochs
+  total_iter: 250 # 50 epochs
   warmup_iter: -1 # no warm up
 
   # losses
   pixel_opt:
-    type: PSNRLoss
+    type: L1Loss
     loss_weight: 1
     reduction: mean
 
@@ -97,7 +97,7 @@ train:
 
 # validation settings
 val:
-  val_freq: 60 # 10 epochs
+  val_freq: 50 # 10 epochs
   save_img: false
   use_image: false
 
@@ -115,7 +115,7 @@ val:
 
 # logging settings
 logger:
-  print_freq: 30 # 5 epochs
+  print_freq: 25 # 5 epochs
   save_checkpoint_freq: !!float 5e3
   use_tb_logger: true
   wandb:

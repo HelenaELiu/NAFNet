@@ -10,6 +10,7 @@ from torch.utils.data import Dataset
 
 from basicsr.data.data_util import *
 
+
 categories = [
     "bikes", 
     "buildings", 
@@ -40,7 +41,6 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
     """
 
     def __init__(self, opt, test: bool = False):
-
         self.opt = opt
         self.paths = [] #(ocl, gt)
         path = opt["dataroot_path"]
@@ -52,6 +52,7 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
         for category in sorted(os.listdir(path)):
             if category not in categories:
                 continue
+            
             category_stack_path = f"{path}/{category}/focus_stack"
             category_block_path = f"{path}/{category}/lf_blocks"
 
@@ -59,6 +60,7 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
                 scene_num += 1
                 scene_stack_path = f"{category_stack_path}/{scene}"
                 scene_block_path = f"{category_block_path}/{scene}"
+                
                 if test and scene_stack_path not in test_files:
                     continue
                 if not test and scene_stack_path in test_files:
@@ -70,19 +72,20 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
 
                 if not os.path.exists(ocl_scene_path) or \
                     not os.path.exists(gt_scene_path):
-                    #print(f"{ocl_scene_path} or {gt_scene_path} does not exist")
+                    print(f"{ocl_scene_path} or {gt_scene_path} does not exist")
                     continue
+                
                 self.paths.append(
                     (ocl_scene_path, ocl_views_scene_path, gt_scene_path)
                 )
 
-        #print(f"VISITED SCENES: {scene_num}") 
-        #print(f"NUMBER OF FILES: {len(self.paths)}") 
+        print(f"VISITED SCENES: {scene_num}") 
+        print(f"NUMBER OF FILES: {len(self.paths)}") 
         
         if opt["random"]:
             random.shuffle(self.paths)
         
-        if opt["size"] and opt["size"] < len(self.paths):
+        if opt["size"] < len(self.paths):
             self.paths = self.paths[:opt["size"]]
 
     def __len__(self):
@@ -135,11 +138,13 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
             ocl_shift, img_size,  
             self.opt["crop"], self.opt["ltm"],
             self.opt["gamma"])
+        
         ocl_views_images = [self.preprocess_images(
             ocl_view, img_size,
             self.opt["crop"], self.opt["ltm"],
             self.opt["gamma"]) 
             for ocl_view in ocl_views] 
+        
         gt_image = self.preprocess_images(
             gt, img_size, 
             self.opt["crop"], self.opt["ltm"],
@@ -156,14 +161,11 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
 
 
 
-
-
 class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
     """Description of data being loaded
     """
 
     def __init__(self, opt, test: bool = False):
-
         self.opt = opt
         self.paths = [] #(ocl, gt)
         path = opt["dataroot_path"]
@@ -175,31 +177,38 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
         for category in sorted(os.listdir(path)):
             if category not in categories:
                 continue
+
             category_stack_path = f"{path}/{category}/focus_stack"
             category_block_path = f"{path}/{category}/lf_blocks"
             category_depth_path = f"{path}/{category}/depth_images"
+            
             for scene in sorted(os.listdir(category_stack_path)):
                 scene_num += 1
                 scene_stack_path = f"{category_stack_path}/{scene}"
                 scene_block_path = f"{category_block_path}/{scene}"
+                
                 if test and scene_stack_path not in test_files:
                     continue
                 if not test and scene_stack_path in test_files:
                     continue
+                
                 ocl_scene_path = f"{scene_stack_path}/{center_view}"
                 scene_depth_path = f"{category_depth_path}/{scene}".replace("_eslf", depth_view)
                 ocl_views_scene_path = [f"{scene_block_path}/{v}" for v in ocl_views]
                 gt_scene_path = f"{scene_stack_path}/{full_view}"
+                
                 if not os.path.exists(ocl_scene_path) or \
                     not os.path.exists(gt_scene_path):
                     print(f"{ocl_scene_path} or {gt_scene_path} does not exist")
                     continue
+                
                 self.paths.append(
                     (ocl_scene_path, ocl_views_scene_path, scene_depth_path, gt_scene_path)
                 )
         
         print(f"VISITED SCENES: {scene_num}") 
         print(f"NUMBER OF FILES: {len(self.paths)}") 
+        
         if opt["random"]:
             random.shuffle(self.paths)
         
@@ -207,7 +216,6 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
             self.paths = self.paths[:opt["size"]]
 
     def __len__(self):
-
         return len(self.paths)
 
     @staticmethod
@@ -227,21 +235,26 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
         #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
         #img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
         #img = np.float32(img)[:,:,::-1] / 65535
-        if img_path.endswith(".npy"):
+
+        if img_path.endswith(".npy"): #RGB [0, 1] float32
             img = np.load(img_path)
         elif img_path.endswith(".png"):
             img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
         
         if gray:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
         if norm: 
             img = (img - np.min(img)) / (np.max(img) - np.min(img))
+        
         if ltm:
             mu = 1000
             img = np.log(1 + mu * img) / np.log(1 + mu)
+        
         if gamma:
             img = img ** (1 / gamma)
             img = np.clip(img, 0, 1) 
+        
         # Only accept downsampling or cropping
         if img_size:
             if crop:
@@ -259,23 +272,26 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
         return torch_img
 
     def __getitem__(self, idx: int):
-
         ocl_shift, ocl_views, depth_view, gt = self.paths[idx]
         img_size = (self.opt["img_height"], self.opt["img_width"])
+        
         ocl_shift_image = self.preprocess_images(
             ocl_shift, img_size,  
             self.opt["crop"], self.opt["ltm"],
             self.opt["gamma"])
+        
         ocl_views_images = [self.preprocess_images(
             ocl_view, img_size,
             self.opt["crop"], self.opt["ltm"],
             self.opt["gamma"]) 
             for ocl_view in ocl_views] 
+        
         depth_image = self.preprocess_images(
             depth_view, img_size,
             False, self.opt["ltm"],
             self.opt["gamma"],
             norm=True)
+        
         gt_image = self.preprocess_images(
             gt, img_size, 
             self.opt["crop"], self.opt["ltm"],
@@ -291,9 +307,10 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
 
 
 
+
+
 class DataLoaderCenterShiftToShift(Dataset):
     """LF 2016 OCL -> LF Dataset for training.
-
     """
 
     def __init__(self, opt):
@@ -332,7 +349,6 @@ class DataLoaderCenterShiftToShift(Dataset):
 
 
     def __len__(self):
-
         return len(self.paths)
 
     @staticmethod
@@ -395,7 +411,6 @@ class DataLoaderCenterViewsToShift(Dataset):
     """
 
     def __init__(self, opt):
-
         self.opt = opt
         self.paths = [] #(ocl, gt)
         path = opt["dataroot_path"]

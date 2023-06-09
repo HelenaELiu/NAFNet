@@ -18,7 +18,7 @@ from basicsr.utils.options import dict2str
 
 
 def main():
-    # parse options, set distributed setting, set ramdom seed
+    # parse options, set distributed setting, set random seed
     opt = parse_options(is_train=False)
 
     torch.backends.cudnn.benchmark = True
@@ -28,8 +28,7 @@ def main():
     make_exp_dirs(opt)
     log_file = osp.join(opt['path']['log'],
                         f"test_{opt['name']}_{get_time_str()}.log")
-    logger = get_root_logger(
-        logger_name='basicsr', log_level=logging.INFO, log_file=log_file)
+    logger = get_root_logger(logger_name='basicsr', log_level=logging.INFO, log_file=log_file)
     logger.info(get_env_info())
     logger.info(dict2str(opt))
 
@@ -51,7 +50,7 @@ def main():
         
         logger.info(
             f"Number of test images in {dataset_opt['name']}: {len(test_set)}")
-        
+
         test_loaders.append(test_loader)
 
     # create model
@@ -60,10 +59,10 @@ def main():
     for test_loader in test_loaders:
         test_set_name = test_loader.dataset.opt['name']
         logger.info(f'Testing {test_set_name}...')
-        
+
         rgb2bgr = opt['val'].get('rgb2bgr', True)
         use_image = opt['val'].get('use_image', True) # whether use uint8 image to compute metrics
-        
+
         model.validation(
             test_loader,
             current_iter=opt['name'],

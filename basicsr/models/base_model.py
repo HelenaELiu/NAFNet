@@ -56,8 +56,7 @@ class BaseModel():
         if self.opt['dist']:
             return self.dist_validation(dataloader, current_iter, tb_logger, save_img, rgb2bgr, use_image)
         else:
-            return self.nondist_validation(dataloader, current_iter, tb_logger,
-                                    save_img, rgb2bgr, use_image)
+            return self.nondist_validation(dataloader, current_iter, tb_logger, save_img, rgb2bgr, use_image)
 
     def get_current_log(self):
         return self.log_dict
@@ -286,7 +285,7 @@ class BaseModel():
         
         if param_key is not None:
             load_net = load_net[param_key]
-        print(' load net keys', load_net.keys)
+        #print(' load net keys', load_net.keys)
         
         # remove unnecessary 'module.'
         for k, v in deepcopy(load_net).items():
