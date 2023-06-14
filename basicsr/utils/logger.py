@@ -145,13 +145,16 @@ def get_root_logger(logger_name='basicsr',
         logging.Logger: The root logger.
     """
     logger = logging.getLogger(logger_name)
+
     # if the logger has been initialized, just return it
     if logger.hasHandlers():
+        logger.setLevel('INFO') #sometimes the level is warning
         return logger
 
     format_str = '%(asctime)s %(levelname)s: %(message)s'
-    logging.basicConfig(format=format_str, level=log_level)
+    logging.basicConfig(format = format_str, level = log_level)
     rank, _ = get_dist_info()
+
     if rank != 0:
         logger.setLevel('ERROR')
     elif log_file is not None:

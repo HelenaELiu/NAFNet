@@ -102,7 +102,7 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
 
         Opens and formats the training image, used for both input and gt pairs
         """
-        
+
         #RGB [0, 1] float32
         img = np.load(img_path)
 
@@ -212,7 +212,7 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
         if opt["random"]:
             random.shuffle(self.paths)
         
-        if opt["size"] and opt["size"] < len(self.paths):
+        if opt["size"] < len(self.paths):
             self.paths = self.paths[:opt["size"]]
 
     def __len__(self):
@@ -232,13 +232,9 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
         Opens and formats the training image, used for both input and gt pairs
         """
         
-        #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
-        #img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
-        #img = np.float32(img)[:,:,::-1] / 65535
-
         if img_path.endswith(".npy"): #RGB [0, 1] float32
             img = np.load(img_path)
-        elif img_path.endswith(".png"):
+        elif img_path.endswith(".png"): #depth map
             img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
         
         if gray:
@@ -344,9 +340,8 @@ class DataLoaderCenterShiftToShift(Dataset):
         if opt["random"]:
             self.paths = random.shuffle(self.paths)
         
-        if opt["size"] and opt["size"] < len(self.paths):
+        if opt["size"] < len(self.paths):
             self.paths = self.paths[:opt["size"]]
-
 
     def __len__(self):
         return len(self.paths)
@@ -363,9 +358,11 @@ class DataLoaderCenterShiftToShift(Dataset):
         Opens and formats the training image, used for both input and gt pairs
         """
         
-        #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
-        img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
-        img = np.float32(img)[:,:,::-1] / 65535
+        if img_path.endswith(".npy"): #RGB [0, 1] float32
+            img = np.load(img_path)
+        elif img_path.endswith(".png"): #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
+            img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+            img = np.float32(img)[:,:,::-1] / 65535
 
         if ltm:
             mu = 1000
@@ -443,11 +440,10 @@ class DataLoaderCenterViewsToShift(Dataset):
         if opt["random"]:
             self.paths = random.shuffle(self.paths)
         
-        if opt["size"] and opt["size"] < len(self.paths):
+        if opt["size"] < len(self.paths):
             self.paths = self.paths[:opt["size"]]
 
     def __len__(self):
-
         return len(self.paths)
 
     @staticmethod
@@ -462,9 +458,11 @@ class DataLoaderCenterViewsToShift(Dataset):
         Opens and formats the training image, used for both input and gt pairs
         """
         
-        #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
-        img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
-        img = np.float32(img)[:,:,::-1] / 65535
+        if img_path.endswith(".npy"): #RGB [0, 1] float32
+            img = np.load(img_path)
+        elif img_path.endswith(".png"): #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
+            img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+            img = np.float32(img)[:,:,::-1] / 65535
 
         if ltm:
             mu = 1000
@@ -513,7 +511,6 @@ class DataLoaderCenterViewDiffAndShiftToShift(Dataset):
     """
 
     def __init__(self, opt):
-
         self.opt = opt
         self.paths = [] #(ocl, gt)
         path = opt["dataroot_path"]
@@ -543,14 +540,13 @@ class DataLoaderCenterViewDiffAndShiftToShift(Dataset):
                 )
                 print(ocl_scene_path, gt_scene_path)
                 
-        if opt["tandom"]:
+        if opt["random"]:
             self.paths = random.shuffle(self.paths)
         
-        if opt["size"] and opt["size"] < len(self.paths):
+        if opt["size"] < len(self.paths):
             self.paths = self.paths[:opt["size"]]
 
     def __len__(self):
-
         return len(self.paths)
 
     @staticmethod
@@ -565,9 +561,11 @@ class DataLoaderCenterViewDiffAndShiftToShift(Dataset):
         Opens and formats the training image, used for both input and gt pairs
         """
         
-        #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
-        img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
-        img = np.float32(img)[:,:,::-1] / 65535
+        if img_path.endswith(".npy"): #RGB [0, 1] float32
+            img = np.load(img_path)
+        elif img_path.endswith(".png"): #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
+            img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+            img = np.float32(img)[:,:,::-1] / 65535
 
         if ltm:
             mu = 1000
@@ -603,10 +601,12 @@ class DataLoaderCenterViewDiffAndShiftToShift(Dataset):
         """
         img_list = []
         for img_p in img_path:
+            if img_path.endswith(".npy"): #RGB [0, 1] float32
+                img = np.load(img_path)
+            elif img_path.endswith(".png"): #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
+                img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+                img = np.float32(img)[:,:,::-1] / 65535
             
-            #BGR [0, 65535] Uint16 --> RGB [0, 1] float32
-            img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
-            img = np.float32(img)[:,:,::-1] / 65535
             if ltm:
                 mu = 1000
                 img = np.log(1 + mu * img) / np.log(1 + mu)

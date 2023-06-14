@@ -76,9 +76,10 @@ def init_loggers(opt):
                         f"train_{opt['name']}_{get_time_str()}.log")
     logger = get_root_logger(
         logger_name='basicsr', log_level=logging.INFO, log_file=log_file)
+
     logger.info(get_env_info())
     logger.info(dict2str(opt))
-
+    
     # initialize wandb logger before tensorboard logger to allow proper sync:
     if (opt['logger'].get('wandb')
             is not None) and (opt['logger']['wandb'].get('project')
@@ -286,7 +287,6 @@ def main():
                 log_vars.update({'lrs': model.get_current_learning_rate()})
                 log_vars.update(model.get_current_log())
                 msg_logger(log_vars)
-
 
             data_time = time.time()
             iter_time = time.time()

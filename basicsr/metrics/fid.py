@@ -42,6 +42,7 @@ def extract_inception_features(data_generator,
     Returns:
         Tensor: Extracted features.
     """
+    
     if len_generator is not None:
         pbar = tqdm(total=len_generator, unit='batch', desc='Extract')
     else:

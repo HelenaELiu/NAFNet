@@ -14,10 +14,10 @@ manual_seed: 10
 
 datasets:
   train:
-    name: LF2016_OCL
+    name: MVLF2018_OCL
     type: DataLoaderCenterViewsAndShiftToShift
-    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
-    test_list: test_files.json
+    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_MVLF2018
+    test_list: MVLF2018_test_files.json
 
     img_height: 370
     img_width: 540
@@ -36,10 +36,10 @@ datasets:
     prefetch_mode: ~
 
   val:
-    name: LF2016_OCL
+    name: MVLF2018_OCL
     type: DataLoaderCenterViewsAndShiftToShift
-    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
-    test_list: test_files.json
+    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_MVLF2018
+    test_list: MVLF2018_test_files.json
 
     img_height: 370
     img_width: 540
@@ -84,7 +84,7 @@ train:
     T_max: 400000
     eta_min: !!float 1e-7
 
-  total_iter: 250 # 50 epochs
+  total_iter: 500 # 100 epochs
   warmup_iter: -1 # no warm up
 
   # losses
@@ -110,6 +110,10 @@ val:
       type: calculate_ssim
       crop_border: 0
       test_y_channel: false
+    #lpips:
+    #  type: calculate_lpips
+    #  crop_border: 0
+    #  test_y_channel: false
 
 
 

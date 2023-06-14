@@ -411,7 +411,7 @@ class ImageRestorationModel(BaseModel):
             log_str += f'\t # {metric}: {value:.4f}'
         logger = get_root_logger()
         logger.info(log_str)
-
+        
         log_dict = OrderedDict()
         # for name, value in loss_dict.items():
         for metric, value in metric_dict.items():

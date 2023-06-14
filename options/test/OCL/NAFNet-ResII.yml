@@ -16,8 +16,8 @@ datasets:
   test:
     name: LF2016_OCL-test
     type: DataLoaderCenterViewsAndShiftToShift
-    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
-    test_list: test_files.json
+    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_MVLF2018
+    test_list: MVLF2018_test_files.json
 
     img_height: 370
     img_width: 540
@@ -69,6 +69,10 @@ val:
       type: calculate_ssim
       crop_border: 0
       test_y_channel: false
+    #lpips:
+    #  type: calculate_lpips
+    #  crop_border: 0
+    #  test_y_channel: false
 
 
 
