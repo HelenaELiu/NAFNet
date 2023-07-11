@@ -259,7 +259,7 @@ class ImageRestorationModel(BaseModel):
 
     def dist_validation(self, dataloader, current_iter, tb_logger, save_img, rgb2bgr, use_image):
         dataset_name = dataloader.dataset.opt['name']
-        with_metrics = self.opt['val'].get('metrics') is not None
+        with_metrics = self.opt['val'].get('with_metrics')
 
         if with_metrics:
             self.metric_results = {
@@ -316,10 +316,9 @@ class ImageRestorationModel(BaseModel):
                         save_img_path = osp.join(self.opt['path']['visualization'],
                                                  img_name,
                                                  f'{img_name}_{current_iter}.png')
-
                         save_gt_img_path = osp.join(self.opt['path']['visualization'],
-                                                 img_name,
-                                                 f'{img_name}_{current_iter}_gt.png')
+                                                    img_name,
+                                                    f'{img_name}_{current_iter}_gt.png')
                     else:
                         save_img_path = osp.join(
                             self.opt['path']['visualization'], dataset_name,
@@ -333,7 +332,8 @@ class ImageRestorationModel(BaseModel):
                         
                     imwrite(in_img, save_in_img_path)
                     imwrite(sr_img, save_img_path)
-                    imwrite(gt_img, save_gt_img_path)
+                    if with_metrics:
+                        imwrite(gt_img, save_gt_img_path)
 
             if with_metrics:
                 # calculate metrics
@@ -362,39 +362,40 @@ class ImageRestorationModel(BaseModel):
             pbar.close()
 
         # current_metric = 0.
-        collected_metrics = OrderedDict()
         if with_metrics:
+            collected_metrics = OrderedDict()
+
             for metric in self.metric_results.keys():
                 collected_metrics[metric] = torch.tensor(self.metric_results[metric]).float().to(self.device)
             collected_metrics['cnt'] = torch.tensor(cnt).float().to(self.device)
 
             self.collected_metrics = collected_metrics
         
-        keys = []
-        metrics = []
-        
-        for name, value in self.collected_metrics.items():
-            keys.append(name)
-            metrics.append(value)
-        
-        metrics = torch.stack(metrics, 0)
-        torch.distributed.reduce(metrics, dst=0)
-        
-        if self.opt['rank'] == 0:
-            metrics_dict = {}
-            cnt = 0
+            keys = []
+            metrics = []
             
-            for key, metric in zip(keys, metrics):
-                if key == 'cnt':
-                    cnt = float(metric)
-                    continue
-                metrics_dict[key] = float(metric)
+            for name, value in self.collected_metrics.items():
+                keys.append(name)
+                metrics.append(value)
+            
+            metrics = torch.stack(metrics, 0)
+            torch.distributed.reduce(metrics, dst=0)
+            
+            if self.opt['rank'] == 0:
+                metrics_dict = {}
+                cnt = 0
+                
+                for key, metric in zip(keys, metrics):
+                    if key == 'cnt':
+                        cnt = float(metric)
+                        continue
+                    metrics_dict[key] = float(metric)
 
-            for key in metrics_dict:
-                metrics_dict[key] /= cnt
+                for key in metrics_dict:
+                    metrics_dict[key] /= cnt
 
-            self._log_validation_metric_values(current_iter, dataloader.dataset.opt['name'],
-                                               tb_logger, metrics_dict)
+                self._log_validation_metric_values(current_iter, dataloader.dataset.opt['name'],
+                                                tb_logger, metrics_dict)
         
         return 0.
 

@@ -10,30 +10,75 @@ from torch.utils.data import Dataset
 
 from basicsr.data.data_util import *
 
+dataset = "LF2016"
+#dataset = "MVLF2018"
+#dataset = "Sony"
 
-categories = [
-    "bikes", 
-    "buildings", 
-    "cars",
-    "flowers_plants", 
-    "fruits_vegetables", 
-    "general", 
-    "occlusions", 
-    "people",
-    "reflective"
-]
+if dataset == "LF2016":
+    categories = [
+        "bikes", 
+        "buildings", 
+        "cars",
+        "flowers_plants", 
+        "fruits_vegetables", 
+        "general", 
+        "occlusions", 
+        "people",
+        "reflective"
+    ]
+elif dataset == "MVLF2018":
+    categories = [
+        "bamboo",
+        "batteries",
+        "benches",
+        "bikes",
+        "books",
+        "bottles",
+        "boxes",
+        "buildings",
+        "cables",
+        "cacti",
+        "chairs",
+        "coins",
+        "cups",
+        "drawers",
+        "fire_hydrants",
+        "flowers",
+        "glasses",
+        "glue",
+        "keyboards",
+        "leaves",
+        "misc",
+        "pens_and_pencils",
+        "phones",
+        "screws",
+        "shelf",
+        "signs",
+        "succulents",
+        "tables",
+        "tools",
+        "trees"
+    ]
+elif dataset == "Sony":
+    categories = [
+        "bear_back",
+        "bear_front",
+        "outdoor_night",
+        "outdoor_selfie",
+        "tree_flare"
+    ]
 
 ext = ".npy"
-
 center_view = f"0.0_center{ext}"
-full_view = f"0.0_full{ext}"
-ocl_views = [f"045{ext}", f"046{ext}", f"055{ext}", f"056{ext}"]
-depth_view = f"_warp_depth.png"
 
-### FOR RUNNING SONY DATA UNCOMMENT THE FOLLOWING LINES ###
-
-#categories = ["outdoor_selfie"]
-#ocl_views = ["LF_00_01.png", "LF_00_00.png", "LF_01_01.png", "LF_01_00.png"]
+if dataset == "LF2016" or dataset == "MVLF2018":
+    with_gt = True
+    full_view = f"0.0_full{ext}"
+    ocl_views = [f"045{ext}", f"046{ext}", f"055{ext}", f"056{ext}"]
+    depth_view = f"_warp_depth.png"
+elif dataset == "Sony":
+    with_gt = False
+    ocl_views = [f"001{ext}", f"002{ext}", f"003{ext}", f"004{ext}"]
 
 
 class DataLoaderCenterViewsAndShiftToShift(Dataset):
@@ -42,13 +87,13 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
 
     def __init__(self, opt, test: bool = False):
         self.opt = opt
-        self.paths = [] #(ocl, gt)
+        self.paths = [] #(ocl shift, ocl views, gt)
         path = opt["dataroot_path"]
+        num_scenes = 0
 
         with open(opt["test_list"], 'r') as f:
             test_files = json.load(f)
-        
-        scene_num = 0
+
         for category in sorted(os.listdir(path)):
             if category not in categories:
                 continue
@@ -57,7 +102,7 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
             category_block_path = f"{path}/{category}/lf_blocks"
 
             for scene in sorted(os.listdir(category_stack_path)):
-                scene_num += 1
+                num_scenes += 1
                 scene_stack_path = f"{category_stack_path}/{scene}"
                 scene_block_path = f"{category_block_path}/{scene}"
                 
@@ -66,21 +111,25 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
                 if not test and scene_stack_path in test_files:
                     continue
                 
-                ocl_scene_path = f"{scene_stack_path}/{center_view}"
-                ocl_views_scene_path = [f"{scene_block_path}/{v}" for v in ocl_views]
-                gt_scene_path = f"{scene_stack_path}/{full_view}"
+                ocl_shift_path = f"{scene_stack_path}/{center_view}"
+                ocl_views_path = [f"{scene_block_path}/{v}" for v in ocl_views]
+                if with_gt:
+                    gt_path = f"{scene_stack_path}/{full_view}"
 
-                if not os.path.exists(ocl_scene_path) or \
-                    not os.path.exists(gt_scene_path):
-                    print(f"{ocl_scene_path} or {gt_scene_path} does not exist")
+                if not os.path.exists(ocl_shift_path):
+                    print(f"{ocl_shift_path} does not exist")
+                    continue
+                if with_gt and not os.path.exists(gt_path):
+                    print(f"{gt_path} does not exist")
                     continue
                 
-                self.paths.append(
-                    (ocl_scene_path, ocl_views_scene_path, gt_scene_path)
-                )
+                if with_gt:
+                    self.paths.append((ocl_shift_path, ocl_views_path, gt_path))
+                else:
+                    self.paths.append((ocl_shift_path, ocl_views_path))
 
-        print(f"VISITED SCENES: {scene_num}") 
-        print(f"NUMBER OF FILES: {len(self.paths)}") 
+        print(f"TOTAL NUMBER OF SCENES: {num_scenes}") 
+        print(f"NUMBER OF SCENES USED: {len(self.paths)}") 
         
         if opt["random"]:
             random.shuffle(self.paths)
@@ -119,10 +168,9 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
             img_size[1] < img.shape[1]):
             if crop:
                 img = center_crop(img, img_size[1], img_size[0], "last")
-            else:
+            #else:
                 #INTER_AREA because we are downsizing
                 #img = cv2.resize(img, (img_size[0], img_size[1]), interpolation=cv2.INTER_AREA)
-                pass
         
         # numpy (H,W,C) --> torch (1, C, H, W)
         torch_img = torch.from_numpy(img).float()
@@ -131,31 +179,35 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
         return torch_img
 
     def __getitem__(self, idx: int):
-        ocl_shift, ocl_views, gt = self.paths[idx]
+        if with_gt:
+            ocl_shift_path, ocl_views_path, gt_path = self.paths[idx]
+        else:
+            ocl_shift_path, ocl_views_path = self.paths[idx]
         img_size = (self.opt["img_height"], self.opt["img_width"])
         
         ocl_shift_image = self.preprocess_images(
-            ocl_shift, img_size,  
-            self.opt["crop"], self.opt["ltm"],
-            self.opt["gamma"])
+            ocl_shift_path, img_size,  
+            self.opt["crop"], self.opt["ltm"], self.opt["gamma"])
         
         ocl_views_images = [self.preprocess_images(
-            ocl_view, img_size,
-            self.opt["crop"], self.opt["ltm"],
-            self.opt["gamma"]) 
-            for ocl_view in ocl_views] 
+            ocl_view_path, img_size,
+            self.opt["crop"], self.opt["ltm"], self.opt["gamma"]) 
+            for ocl_view_path in ocl_views_path] 
         
-        gt_image = self.preprocess_images(
-            gt, img_size, 
-            self.opt["crop"], self.opt["ltm"],
-            self.opt["gamma"])
+        if with_gt:
+            gt_image = self.preprocess_images(
+            gt_path, img_size, 
+            self.opt["crop"], self.opt["ltm"], self.opt["gamma"])
         
-        #Stack OCL Image
+        #Stack OCL Images
         ocl_stack = ocl_shift_image
         for ocl_view in ocl_views_images:
-            ocl_stack = torch.cat((ocl_stack, ocl_view), dim=0)
-
-        return {'lq': ocl_stack, 'gt': gt_image} 
+            ocl_stack = torch.cat((ocl_stack, ocl_view), dim = 0)
+        
+        if with_gt:
+            return {'lq': ocl_stack, 'gt': gt_image} 
+        else:
+            return {'lq': ocl_stack} 
 
 
 

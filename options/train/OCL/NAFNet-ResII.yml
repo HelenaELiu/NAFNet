@@ -19,13 +19,13 @@ datasets:
     dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_MVLF2018
     test_list: MVLF2018_test_files.json
 
-    img_height: 370
-    img_width: 540
+    img_height: #370
+    img_width: #540
     random: true
     crop: true
     ltm: false 
     gamma: 3.0
-    size: 1000
+    size: 5000
 
     # dataloader
     use_shuffle: true
@@ -47,7 +47,7 @@ datasets:
     crop: true
     ltm: false
     gamma: 3.0
-    size: 1000
+    size: 5000
 
 
 
@@ -84,7 +84,7 @@ train:
     T_max: 400000
     eta_min: !!float 1e-7
 
-  total_iter: 500 # 100 epochs
+  total_iter: 670
   warmup_iter: -1 # no warm up
 
   # losses
@@ -97,7 +97,7 @@ train:
 
 # validation settings
 val:
-  val_freq: 50 # 10 epochs
+  val_freq: 134
   save_img: false
   use_image: false
 
@@ -110,16 +110,14 @@ val:
       type: calculate_ssim
       crop_border: 0
       test_y_channel: false
-    #lpips:
-    #  type: calculate_lpips
-    #  crop_border: 0
-    #  test_y_channel: false
+    lpips:
+      type: calculate_lpips
 
 
 
 # logging settings
 logger:
-  print_freq: 25 # 5 epochs
+  print_freq: 67
   save_checkpoint_freq: !!float 5e3
   use_tb_logger: true
   wandb:

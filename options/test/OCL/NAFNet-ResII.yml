@@ -16,19 +16,19 @@ datasets:
   test:
     name: LF2016_OCL-test
     type: DataLoaderCenterViewsAndShiftToShift
-    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_MVLF2018
-    test_list: MVLF2018_test_files.json
+    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
+    test_list: LF2016_test_files.json
 
-    img_height: 370
-    img_width: 540
-    random: true
+    img_height: 370 #2156 #1940 #370
+    img_width: 540 #2880 #2592 #540
+    random: false
     crop: true
     ltm: false 
     gamma: 3.0
-    size: 1000
+    size: 5000
 
     # dataloader
-    use_shuffle: true
+    use_shuffle: false
     num_worker_per_gpu: 6
     batch_size_per_gpu: 7
     dataset_enlarge_ratio: 1
@@ -49,7 +49,7 @@ network_g:
 
 # path
 path:
-  pretrain_network_g: experiments/NAFNet-OCL-residual-II/models/net_g_latest.pth
+  pretrain_network_g: experiments/NAFNet-OCL-residual-II-run11/models/net_g_latest.pth
   strict_load_g: true
   resume_state: ~
 
@@ -59,6 +59,7 @@ path:
 val:
   save_img: true
   use_image: false
+  with_metrics: true
 
   metrics:
     psnr: # metric name, can be arbitrary
@@ -69,10 +70,8 @@ val:
       type: calculate_ssim
       crop_border: 0
       test_y_channel: false
-    #lpips:
-    #  type: calculate_lpips
-    #  crop_border: 0
-    #  test_y_channel: false
+    lpips:
+      type: calculate_lpips
 
 
 

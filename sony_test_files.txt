@@ -1,0 +1,6 @@
+["/newDisk/dataset/2x2_OCL_BOKEH/sony/bear_back/focus_stack/scene1",
+"/newDisk/dataset/2x2_OCL_BOKEH/sony/bear_front/focus_stack/scene1",
+"/newDisk/dataset/2x2_OCL_BOKEH/sony/tree_flare/focus_stack/scene1"]
+
+["/newDisk/dataset/2x2_OCL_BOKEH/sony/outdoor_night/focus_stack/scene1",
+"/newDisk/dataset/2x2_OCL_BOKEH/sony/outdoor_selfie/focus_stack/scene1"]
