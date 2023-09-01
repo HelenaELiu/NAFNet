@@ -8,23 +8,23 @@
 name: NAFNet-OCL-plain
 model_type: ImageRestorationModel
 scale: 1
-num_gpu: 7
+num_gpu: 8
 manual_seed: 10
 
 datasets:
   train:
     name: LF2016_OCL
-    type: DataLoaderCenterViewsAndShiftToShift
+    type: DataLoaderCenterViewsAndShiftToDefocusMap
     dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
-    test_list: test_files.json
+    test_list: LF2016_test_files.json
 
-    img_height: 370
-    img_width: 540
+    img_height: 368
+    img_width: 528
     random: true
     crop: true
     ltm: false 
-    gamma: 3.0
-    size: 1000
+    gamma: 1.0
+    size: 5000
 
     # dataloader
     use_shuffle: true
@@ -35,23 +35,23 @@ datasets:
 
   val:
     name: LF2016_OCL
-    type: DataLoaderCenterViewsAndShiftToShift
+    type: DataLoaderCenterViewsAndShiftToDefocusMap
     dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
-    test_list: test_files.json
+    test_list: LF2016_test_files.json
 
-    img_height: 370
-    img_width: 540
+    img_height: 368
+    img_width: 528
     random: true
     crop: true
     ltm: false 
-    gamma: 3.0
-    size: 1000
+    gamma: 1.0
+    size: 5000
 
 
 
 network_g:
   in_channels: 15
-  out_channels: 3
+  out_channels: 1
   type: NAFNetPlain
   width: 32
   enc_blk_nums: [2, 2, 4, 8]
@@ -78,20 +78,21 @@ train:
     T_max: 400000
     eta_min: !!float 1e-7
 
-  total_iter: 40000
+  total_iter: 2500 #500 epochs
   warmup_iter: -1 # no warm up
 
   # losses
   pixel_opt:
-    type: PSNRLoss
+    type: MSELoss
     loss_weight: 1
     reduction: mean
 
 # validation settings
 val:
-  val_freq: !!float 5e3
+  val_freq: 50 #every 10 epochs
   save_img: false
   use_image: false
+  with_metrics: true
 
   metrics:
     psnr: # metric name, can be arbitrary
@@ -102,10 +103,12 @@ val:
       type: calculate_ssim
       crop_border: 0
       test_y_channel: false
+    lpips:
+      type: calculate_lpips
 
 # logging settings
 logger:
-  print_freq: 200
+  print_freq: 5 #every epoch
   save_checkpoint_freq: !!float 5e3
   use_tb_logger: true
   wandb:

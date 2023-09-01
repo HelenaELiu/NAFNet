@@ -15,12 +15,12 @@ manual_sed: 10
 datasets:
   test:
     name: LF2016_OCL-test
-    type: DataLoaderCenterViewsAndShiftToShift
+    type: DataLoaderCenterShiftToDefocusMap
     dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
     test_list: LF2016_test_files.json
 
-    img_height: 370 #2156 #1940 #370
-    img_width: 540 #2880 #2592 #540
+    img_height: 368 #2156 #1940 #370
+    img_width: 528 #2880 #2592 #540
     random: false
     crop: true
     ltm: false 
@@ -37,8 +37,8 @@ datasets:
 
 
 network_g:
-  in_channels: 15
-  out_channels: 3
+  in_channels: 3
+  out_channels: 1
   type: NAFNetResidualOCLII
   width: 32
   enc_blk_nums: [2, 2, 4, 8]
@@ -49,7 +49,7 @@ network_g:
 
 # path
 path:
-  pretrain_network_g: experiments/NAFNet-OCL-residual-II-run11/models/net_g_latest.pth
+  pretrain_network_g: experiments/NAFNet-OCL-residual-II/models/net_g_latest.pth
   strict_load_g: true
   resume_state: ~
 
@@ -59,7 +59,7 @@ path:
 val:
   save_img: true
   use_image: false
-  with_metrics: true
+  with_metrics: false
 
   metrics:
     psnr: # metric name, can be arbitrary

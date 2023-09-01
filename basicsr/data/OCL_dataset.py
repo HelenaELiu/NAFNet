@@ -1,7 +1,6 @@
 import os
 import random
 from re import I, U
-
 import cv2
 import json
 import numpy as np
@@ -14,75 +13,41 @@ dataset = "LF2016"
 #dataset = "MVLF2018"
 #dataset = "Sony"
 
-if dataset == "LF2016":
+if dataset == "LF2016": #9 categories
     categories = [
-        "bikes", 
-        "buildings", 
-        "cars",
-        "flowers_plants", 
-        "fruits_vegetables", 
-        "general", 
-        "occlusions", 
-        "people",
-        "reflective"
+        "bikes", "buildings", "cars", "flowers_plants", "fruits_vegetables", 
+        "general", "occlusions", "people", "reflective"
     ]
-elif dataset == "MVLF2018":
+elif dataset == "MVLF2018": #30 categories
     categories = [
-        "bamboo",
-        "batteries",
-        "benches",
-        "bikes",
-        "books",
-        "bottles",
-        "boxes",
-        "buildings",
-        "cables",
-        "cacti",
-        "chairs",
-        "coins",
-        "cups",
-        "drawers",
-        "fire_hydrants",
-        "flowers",
-        "glasses",
-        "glue",
-        "keyboards",
-        "leaves",
-        "misc",
-        "pens_and_pencils",
-        "phones",
-        "screws",
-        "shelf",
-        "signs",
-        "succulents",
-        "tables",
-        "tools",
-        "trees"
+        "bamboo", "batteries", "benches", "bikes", "books",
+        "bottles", "boxes", "buildings", "cables", "cacti", 
+        "chairs", "coins", "cups", "drawers", "fire_hydrants", 
+        "flowers", "glasses", "glue", "keyboards", "leaves", 
+        "misc", "pens_and_pencils", "phones", "screws", "shelf", 
+        "signs", "succulents", "tables", "tools", "trees"
     ]
-elif dataset == "Sony":
+elif dataset == "Sony": #5 categories
     categories = [
-        "bear_back",
-        "bear_front",
-        "outdoor_night",
-        "outdoor_selfie",
-        "tree_flare"
+        "bear_back", "bear_front", "outdoor_night", "outdoor_selfie", "tree_flare"
     ]
 
 ext = ".npy"
-center_view = f"0.0_center{ext}"
+center_shift = f"0.0_center{ext}"
 
 if dataset == "LF2016" or dataset == "MVLF2018":
-    with_gt = True
-    full_view = f"0.0_full{ext}"
+    full_shift = f"0.0_full{ext}"
     ocl_views = [f"045{ext}", f"046{ext}", f"055{ext}", f"056{ext}"]
-    depth_view = f"_warp_depth.png"
 elif dataset == "Sony":
-    with_gt = False
     ocl_views = [f"001{ext}", f"002{ext}", f"003{ext}", f"004{ext}"]
+
+with_gt = True
 
 
 class DataLoaderCenterViewsAndShiftToShift(Dataset):
-    """Description of data being loaded
+    """
+    Input: 2x2 shift + 4 views
+    GT: 10x10 shift
     """
 
     def __init__(self, opt, test: bool = False):
@@ -111,10 +76,10 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
                 if not test and scene_stack_path in test_files:
                     continue
                 
-                ocl_shift_path = f"{scene_stack_path}/{center_view}"
-                ocl_views_path = [f"{scene_block_path}/{v}" for v in ocl_views]
+                ocl_shift_path = f"{scene_stack_path}/{center_shift}"
+                ocl_views_path = [f"{scene_block_path}/{view}" for view in ocl_views]
                 if with_gt:
-                    gt_path = f"{scene_stack_path}/{full_view}"
+                    gt_path = f"{scene_stack_path}/{full_shift}"
 
                 if not os.path.exists(ocl_shift_path):
                     print(f"{ocl_shift_path} does not exist")
@@ -128,8 +93,8 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
                 else:
                     self.paths.append((ocl_shift_path, ocl_views_path))
 
-        print(f"TOTAL NUMBER OF SCENES: {num_scenes}") 
-        print(f"NUMBER OF SCENES USED: {len(self.paths)}") 
+        print(f"TOTAL NUMBER OF IMAGES: {num_scenes}") 
+        print(f"NUMBER OF IMAGES IN SET: {len(self.paths)}") 
         
         if opt["random"]:
             random.shuffle(self.paths)
@@ -142,23 +107,18 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
 
     @staticmethod
     def preprocess_images( 
-        img_path: str,
-        img_size: tuple,
-        crop: bool,
-        ltm: bool,
-        gamma: float):
-        """Image Preprocessor
-
+        img_path: str, img_size: tuple, crop: bool, ltm: bool, gamma: float):
+        """
+        Image Preprocessor
         Opens and formats the training image, used for both input and gt pairs
         """
 
-        #RGB [0, 1] float32
+        #img is RGB [0, 1] float32
         img = np.load(img_path)
 
         if ltm:
             mu = 1000
             img = np.log(1 + mu * img) / np.log(1 + mu)
-        
         if gamma:
             img = img ** (1 / gamma)
             img = np.clip(img, 0, 1) 
@@ -172,7 +132,7 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
                 #INTER_AREA because we are downsizing
                 #img = cv2.resize(img, (img_size[0], img_size[1]), interpolation=cv2.INTER_AREA)
         
-        # numpy (H,W,C) --> torch (1, C, H, W)
+        # numpy (H, W, C) --> torch (1, C, H, W)
         torch_img = torch.from_numpy(img).float()
         torch_img = torch_img.permute(2, 0, 1) 
 
@@ -183,6 +143,7 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
             ocl_shift_path, ocl_views_path, gt_path = self.paths[idx]
         else:
             ocl_shift_path, ocl_views_path = self.paths[idx]
+        
         img_size = (self.opt["img_height"], self.opt["img_width"])
         
         ocl_shift_image = self.preprocess_images(
@@ -196,10 +157,10 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
         
         if with_gt:
             gt_image = self.preprocess_images(
-            gt_path, img_size, 
-            self.opt["crop"], self.opt["ltm"], self.opt["gamma"])
+                gt_path, img_size, 
+                self.opt["crop"], self.opt["ltm"], self.opt["gamma"])
         
-        #Stack OCL Images
+        #Stack the OCL shift and views
         ocl_stack = ocl_shift_image
         for ocl_view in ocl_views_images:
             ocl_stack = torch.cat((ocl_stack, ocl_view), dim = 0)
@@ -213,13 +174,252 @@ class DataLoaderCenterViewsAndShiftToShift(Dataset):
 
 
 
-class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
-    """Description of data being loaded
+class DataLoaderCenterShiftToDefocusMap(Dataset):
+    """
+    Input: 2x2 shift
+    GT: 10x10 defocus map
     """
 
     def __init__(self, opt, test: bool = False):
         self.opt = opt
-        self.paths = [] #(ocl, gt)
+        self.paths = [] #(ocl shift, gt)
+        path = opt["dataroot_path"]
+        num_scenes = 0
+
+        with open(opt["test_list"], 'r') as f:
+            test_files = json.load(f)
+
+        for category in sorted(os.listdir(path)):
+            if category not in categories:
+                continue
+
+            category_stack_path = f"{path}/{category}/focus_stack"
+
+            for scene in sorted(os.listdir(category_stack_path)):
+                num_scenes += 1
+                scene_stack_path = f"{category_stack_path}/{scene}"
+
+                if test and scene_stack_path not in test_files:
+                    continue
+                if not test and scene_stack_path in test_files:
+                    continue
+
+                ocl_shift_path = f"{scene_stack_path}/{center_shift}"
+                if with_gt:
+                    gt_path = f"{path}/defocus_maps/{scene}.png"
+                
+                if not os.path.exists(ocl_shift_path): 
+                    print(f"{ocl_shift_path} does not exist")
+                    continue
+                if with_gt and not os.path.exists(gt_path): 
+                    print(f"{gt_path} does not exist")
+                    continue
+
+                if with_gt:
+                    self.paths.append((ocl_shift_path, gt_path))
+                else:
+                    self.paths.append((ocl_shift_path))
+        
+        print(f"TOTAL NUMBER OF IMAGES: {num_scenes}")
+        print(f"NUMBER OF IMAGES IN SET: {len(self.paths)}")
+
+        if opt["random"]:
+            random.shuffle(self.paths)
+        
+        if opt["size"] < len(self.paths):
+            self.paths = self.paths[:opt["size"]]
+
+    def __len__(self):
+        return len(self.paths)
+
+    @staticmethod
+    def preprocess_images( 
+        img_path: str, img_size: tuple, crop: bool, ltm: bool, gamma: float):
+        """
+        Image Preprocessor
+        Opens and formats the training image, used for both input and gt pairs
+        """
+        
+        if img_path.endswith(".npy"): #ocl data
+            img = np.load(img_path)
+        elif img_path.endswith(".png"): #defocus map
+            img = cv2.imread(img_path, cv2.COLOR_BGR2GRAY)
+            img = np.expand_dims(img, axis=-1) #changes from (h, w) to (h, w, 1)
+            img = np.float32(img) / 255
+
+        if ltm:
+            mu = 1000
+            img = np.log(1 + mu * img) / np.log(1 + mu)
+        if gamma:
+            img = img ** (1/float(gamma))
+            img = np.clip(img, 0, 1) 
+            
+        # numpy (H, W, C) --> torch (1, C, H, W)
+        torch_img = torch.from_numpy(img).float()
+        torch_img = torch_img.permute(2, 0, 1) 
+
+        return torch_img
+
+    def __getitem__(self, idx: int):
+        if with_gt:
+            ocl_shift_path, gt_path = self.paths[idx]
+        else:
+            ocl_shift_path = self.paths[idx]
+        
+        img_size = (self.opt["img_height"], self.opt["img_width"])
+
+        ocl_shift_image = self.preprocess_images(
+            ocl_shift_path, img_size, 
+            self.opt["crop"], self.opt["ltm"], self.opt["gamma"])
+        
+        if with_gt:
+            gt_image = self.preprocess_images(
+                gt_path, img_size,
+                self.opt["crop"], self.opt["ltm"], self.opt["gamma"])
+
+        if with_gt:
+            return {'lq': ocl_shift_image, 'gt': gt_image}
+        else:
+            return {'lq': ocl_shift_image}
+
+
+
+
+
+class DataLoaderCenterViewsAndShiftToDefocusMap(Dataset):
+    """
+    Input: 2x2 shift + 4 views
+    GT: 10x10 defocus map
+    """
+
+    def __init__(self, opt, test: bool = False):
+        self.opt = opt
+        self.paths = [] #(ocl shift, ocl views, gt)
+        path = opt["dataroot_path"]
+        num_scenes = 0
+
+        with open(opt["test_list"], 'r') as f:
+            test_files = json.load(f)
+
+        for category in sorted(os.listdir(path)):
+            if category not in categories:
+                continue
+
+            category_stack_path = f"{path}/{category}/focus_stack"
+            category_block_path = f"{path}/{category}/lf_blocks"
+
+            for scene in sorted(os.listdir(category_stack_path)):
+                num_scenes += 1
+                scene_stack_path = f"{category_stack_path}/{scene}"
+                scene_block_path = f"{category_block_path}/{scene}"
+
+                if test and scene_stack_path not in test_files:
+                    continue
+                if not test and scene_stack_path in test_files:
+                    continue
+
+                ocl_shift_path = f"{scene_stack_path}/{center_shift}"
+                ocl_views_path = [f"{scene_block_path}/{view}" for view in ocl_views]
+                if with_gt:
+                    gt_path = f"{path}/defocus_maps/{scene}.png"
+                
+                if not os.path.exists(ocl_shift_path): 
+                    print(f"{ocl_shift_path} does not exist")
+                    continue
+                if with_gt and not os.path.exists(gt_path): 
+                    print(f"{gt_path} does not exist")
+                    continue
+
+                if with_gt:
+                    self.paths.append((ocl_shift_path, ocl_views_path, gt_path))
+                else:
+                    self.paths.append((ocl_shift_path, ocl_views_path))
+        
+        print(f"TOTAL NUMBER OF IMAGES: {num_scenes}")
+        print(f"NUMBER OF IMAGES IN SET: {len(self.paths)}")
+
+        if opt["random"]:
+            random.shuffle(self.paths)
+        
+        if opt["size"] < len(self.paths):
+            self.paths = self.paths[:opt["size"]]
+
+    def __len__(self):
+        return len(self.paths)
+
+    @staticmethod
+    def preprocess_images( 
+        img_path: str, img_size: tuple, crop: bool, ltm: bool, gamma: float):
+        """
+        Image Preprocessor
+        Opens and formats the training image, used for both input and gt pairs
+        """
+        
+        if img_path.endswith(".npy"): #ocl data
+            img = np.load(img_path)
+        elif img_path.endswith(".png"): #defocus map
+            img = cv2.imread(img_path, cv2.COLOR_BGR2GRAY)
+            img = np.expand_dims(img, axis=-1) #changes from (h, w) to (h, w, 1)
+            img = np.float32(img) / 255
+
+        if ltm:
+            mu = 1000
+            img = np.log(1 + mu * img) / np.log(1 + mu)
+        if gamma:
+            img = img ** (1 / float(gamma))
+            img = np.clip(img, 0, 1) 
+        
+        if crop:
+            img = img[:img_size[0], :img_size[1], :]
+            
+        # numpy (H, W, C) --> torch (1, C, H, W)
+        torch_img = torch.from_numpy(img).float()
+        torch_img = torch_img.permute(2, 0, 1) 
+
+        return torch_img
+
+    def __getitem__(self, idx: int):
+        if with_gt:
+            ocl_shift_path, ocl_views_path, gt_path = self.paths[idx]
+        else:
+            ocl_shift_path, ocl_views_path = self.paths[idx]
+        
+        img_size = (self.opt["img_height"], self.opt["img_width"])
+
+        ocl_shift_image = self.preprocess_images(
+            ocl_shift_path, img_size, 
+            self.opt["crop"], self.opt["ltm"], self.opt["gamma"])
+        
+        ocl_views_images = [self.preprocess_images(
+            ocl_view_path, img_size,
+            self.opt["crop"], self.opt["ltm"], self.opt["gamma"])
+            for ocl_view_path in ocl_views_path]
+        
+        if with_gt:
+            gt_image = self.preprocess_images(
+                gt_path, img_size,
+                self.opt["crop"], self.opt["ltm"], self.opt["gamma"])
+        
+        #Stack the OCL shift and views
+        ocl_stack = ocl_shift_image
+        for ocl_view in ocl_views_images:
+            ocl_stack = torch.cat((ocl_stack, ocl_view), dim = 0)
+
+        if with_gt:
+            return {'lq': ocl_stack, 'gt': gt_image}
+        else:
+            return {'lq': ocl_stack}
+        
+'''
+class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
+    """
+    Input: 2x2 shift + 4 Views + Depth map
+    GT: 10x10 shift
+    """
+
+    def __init__(self, opt, test: bool = False):
+        self.opt = opt
+        self.paths = [] #(ocl shift, ocl views, depth map, gt)
         path = opt["dataroot_path"]
 
         with open(opt["test_list"], 'r') as f:
@@ -245,7 +445,7 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
                     continue
                 
                 ocl_scene_path = f"{scene_stack_path}/{center_view}"
-                scene_depth_path = f"{category_depth_path}/{scene}".replace("_eslf", depth_view)
+                scene_depth_path = f"{category_depth_path}/{scene}".replace("_eslf", "_warp_depth.png")
                 ocl_views_scene_path = [f"{scene_block_path}/{v}" for v in ocl_views]
                 gt_scene_path = f"{scene_stack_path}/{full_view}"
                 
@@ -354,9 +554,6 @@ class DataLoaderCenterViewsAndShiftAndDepthToShift(Dataset):
         return {'lq': ocl_stack, 'gt': gt_image} 
 
 
-
-
-
 class DataLoaderCenterShiftToShift(Dataset):
     """LF 2016 OCL -> LF Dataset for training.
     """
@@ -390,7 +587,7 @@ class DataLoaderCenterShiftToShift(Dataset):
                 print(ocl_scene_path, gt_scene_path)
                 
         if opt["random"]:
-            self.paths = random.shuffle(self.paths)
+            random.shuffle(self.paths)
         
         if opt["size"] < len(self.paths):
             self.paths = self.paths[:opt["size"]]
@@ -401,7 +598,7 @@ class DataLoaderCenterShiftToShift(Dataset):
     @staticmethod
     def preprocess_images( 
         img_path: str,
-        img_size: int,
+        img_size: tuple,
         crop: bool,
         ltm: bool,
         gamma: float):
@@ -423,14 +620,13 @@ class DataLoaderCenterShiftToShift(Dataset):
             img = img ** (1/float(gamma))
             img = np.clip(img, 0, 1) 
         
-        '''
-        if img_size and img_size < img.shape[0]:
-            if crop:
-                img = center_crop(img, img_size, img_size, "last")
-            else:
-                #INTER_AREA because we are downsizing
-                img = cv2.resize(img, (img_size, img_size), interpolation=cv2.INTER_AREA)
-        '''
+
+        #if img_size and img_size < img.shape[0]:
+        #    if crop:
+        #        img = center_crop(img, img_size, img_size, "last")
+        #    else:
+        #        #INTER_AREA because we are downsizing
+        #        img = cv2.resize(img, (img_size, img_size), interpolation=cv2.INTER_AREA)
         
         # numpy (H,W,C) --> torch (1, C, H, W)
         torch_img = torch.from_numpy(img).float()
@@ -454,11 +650,7 @@ class DataLoaderCenterShiftToShift(Dataset):
         return ocl_image, gt_image
 
 
-
 class DataLoaderCenterViewsToShift(Dataset):
-    """Description of data being loaded
-    """
-
     def __init__(self, opt):
         self.opt = opt
         self.paths = [] #(ocl, gt)
@@ -490,7 +682,7 @@ class DataLoaderCenterViewsToShift(Dataset):
                 print(ocl_scene_path, gt_scene_path)
                 
         if opt["random"]:
-            self.paths = random.shuffle(self.paths)
+            random.shuffle(self.paths)
         
         if opt["size"] < len(self.paths):
             self.paths = self.paths[:opt["size"]]
@@ -559,9 +751,6 @@ class DataLoaderCenterViewsToShift(Dataset):
 
 
 class DataLoaderCenterViewDiffAndShiftToShift(Dataset):
-    """Description of data being loaded
-    """
-
     def __init__(self, opt):
         self.opt = opt
         self.paths = [] #(ocl, gt)
@@ -593,7 +782,7 @@ class DataLoaderCenterViewDiffAndShiftToShift(Dataset):
                 print(ocl_scene_path, gt_scene_path)
                 
         if opt["random"]:
-            self.paths = random.shuffle(self.paths)
+            random.shuffle(self.paths)
         
         if opt["size"] < len(self.paths):
             self.paths = self.paths[:opt["size"]]
@@ -711,3 +900,4 @@ class DataLoaderCenterViewDiffAndShiftToShift(Dataset):
         print(ocl_stack.size())
 
         return ocl_stack, gt_image
+'''

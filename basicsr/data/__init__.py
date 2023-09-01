@@ -53,6 +53,9 @@ def create_dataset(dataset_opt, test=False):
     
     if dataset_cls is None:
         raise ValueError(f'Dataset {dataset_type} is not found.')
+    
+    print(dataset_cls)
+    print(test)
 
     dataset = dataset_cls(dataset_opt, test=test)
 

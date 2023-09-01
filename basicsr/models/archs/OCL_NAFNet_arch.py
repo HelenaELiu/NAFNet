@@ -111,6 +111,38 @@ class NAFNetResidualOCLII(NAFNet):
         x = x + inp[:,:3,:,:]
 
         return x[:, :, :H, :W]
+    
+
+
+class NAFNetResidualOCLII(NAFNet):
+    def __init__(self, **kwargs):
+        super(NAFNetResidualOCLII, self).__init__(**kwargs)
+
+    def forward(self, inp):
+        B, C, H, W = inp.shape
+        inp = self.check_image_size(inp)
+
+        x = self.intro(inp)
+
+        encs = []
+
+        for encoder, down in zip(self.encoders, self.downs):
+            x = encoder(x)
+            encs.append(x)
+            x = down(x)
+
+        x = self.middle_blks(x)
+
+        for decoder, up, enc_skip in zip(self.decoders, self.ups, encs[::-1]):
+            x = up(x)
+            x = x + enc_skip
+            x = decoder(x)
+
+        x = self.ending(x)
+        x = x + inp[:,:3,:,:]
+
+        return x[:, :, :H, :W]
+
 
 
 class NAFNetResidualOCLConv(NAFNet):

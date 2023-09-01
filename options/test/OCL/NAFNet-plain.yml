@@ -15,20 +15,20 @@ datasets:
 
   test:
     name: LF2016_OCL-test
-    type: DataLoaderCenterViewsAndShiftToShift
+    type: DataLoaderCenterViewsAndShiftToDefocusMap
     dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
-    test_list: test_files.json
+    test_list: LF2016_test_files.json
 
-    img_height: 370
-    img_width: 540
-    random: true
+    img_height: 368
+    img_width: 528
+    random: false
     crop: true
     ltm: false 
-    gamma: 3.0
-    size: 1000
+    gamma: 1.0
+    size: 5000
 
     # dataloader
-    use_shuffle: true
+    use_shuffle: false
     num_worker_per_gpu: 6
     batch_size_per_gpu: 7
     dataset_enlarge_ratio: 1
@@ -37,7 +37,7 @@ datasets:
 
 network_g:
   in_channels: 15
-  out_channels: 3
+  out_channels: 1
   type: NAFNetPlain
   width: 32
   enc_blk_nums: [2, 2, 4, 8]
@@ -50,9 +50,11 @@ path:
   strict_load_g: true
   resume_state: ~
 
+#validation settings
 val:
   save_img: true
   use_image: false
+  with_metrics: false
 
   metrics:
     psnr: # metric name, can be arbitrary
@@ -63,6 +65,8 @@ val:
       type: calculate_ssim
       crop_border: 0
       test_y_channel: false
+    lpips:
+      type: calculate_lpips
 
 # dist training settings
 dist_params:

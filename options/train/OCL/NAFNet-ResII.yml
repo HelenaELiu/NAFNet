@@ -14,13 +14,13 @@ manual_seed: 10
 
 datasets:
   train:
-    name: MVLF2018_OCL
-    type: DataLoaderCenterViewsAndShiftToShift
-    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_MVLF2018
-    test_list: MVLF2018_test_files.json
+    name: LF2016_OCL
+    type: DataLoaderCenterShiftToDefocusMap
+    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
+    test_list: LF2016_test_files.json
 
-    img_height: #370
-    img_width: #540
+    img_height: 368
+    img_width: 528
     random: true
     crop: true
     ltm: false 
@@ -36,13 +36,13 @@ datasets:
     prefetch_mode: ~
 
   val:
-    name: MVLF2018_OCL
-    type: DataLoaderCenterViewsAndShiftToShift
-    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_MVLF2018
-    test_list: MVLF2018_test_files.json
+    name: LF2016_OCL
+    type: DataLoaderCenterShiftToDefocusMap
+    dataroot_path: /newDisk/dataset/2x2_OCL_BOKEH/stanford_LF2016
+    test_list: LF2016_test_files.json
 
-    img_height: 370
-    img_width: 540
+    img_height: 368
+    img_width: 528
     random: true
     crop: true
     ltm: false
@@ -52,8 +52,8 @@ datasets:
 
 
 network_g:
-  in_channels: 15
-  out_channels: 3
+  in_channels: 3
+  out_channels: 1
   type: NAFNetResidualOCLII
   width: 32
   enc_blk_nums: [2, 2, 4, 8]
@@ -84,12 +84,12 @@ train:
     T_max: 400000
     eta_min: !!float 1e-7
 
-  total_iter: 670
+  total_iter: 1340 #20 epochs
   warmup_iter: -1 # no warm up
 
   # losses
   pixel_opt:
-    type: L1Loss
+    type: MSELoss
     loss_weight: 1
     reduction: mean
 
@@ -97,7 +97,7 @@ train:
 
 # validation settings
 val:
-  val_freq: 134
+  val_freq: 134 #every 2 epochs
   save_img: false
   use_image: false
 
@@ -117,7 +117,7 @@ val:
 
 # logging settings
 logger:
-  print_freq: 67
+  print_freq: 67 #every epoch
   save_checkpoint_freq: !!float 5e3
   use_tb_logger: true
   wandb:

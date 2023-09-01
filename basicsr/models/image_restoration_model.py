@@ -291,6 +291,7 @@ class ImageRestorationModel(BaseModel):
 
             visuals = self.get_current_visuals()
             in_img = tensor2img([visuals['lq']])[:,:,:3][:,:,::-1]
+            #in_img = tensor2img([visuals['lq']])
             sr_img = tensor2img([visuals['result']], rgb2bgr=rgb2bgr)
             if 'gt' in visuals:
                 gt_img = tensor2img([visuals['gt']], rgb2bgr=rgb2bgr)
@@ -302,7 +303,7 @@ class ImageRestorationModel(BaseModel):
             torch.cuda.empty_cache()
 
             if save_img:
-                if sr_img.shape[2] == 6:
+                if len(sr_img.shape) > 2 and sr_img.shape[2] == 6:
                     L_img = sr_img[:, :, :3]
                     R_img = sr_img[:, :, 3:]
 
@@ -329,7 +330,7 @@ class ImageRestorationModel(BaseModel):
                         save_in_img_path = osp.join(
                             self.opt['path']['visualization'], dataset_name,
                             f'{img_name}_in.png')
-                        
+                    
                     imwrite(in_img, save_in_img_path)
                     imwrite(sr_img, save_img_path)
                     if with_metrics:
